@@ -1,0 +1,27 @@
+# Python
+**/__pycache__/
+**/*.py[cod]
+**/*.so
+**/env/
+**/venv/
+**/.venv/
+**/build/
+**/dist/
+**/*.egg-info/
+
+# Tests & IDE
+**/.pytest_cache/
+**/.coverage
+**/.mypy_cache/
+**/.ruff_cache/
+.git/
+.gitignore
+.vscode/
+.idea/
+
+# Environment & Local Secrets
+.env
+**/.env
+**/*.db
+**/*.sqlite3
+**/*.log
