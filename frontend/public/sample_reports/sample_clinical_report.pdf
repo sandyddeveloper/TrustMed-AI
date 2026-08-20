@@ -1,0 +1,93 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 2660 >>
+stream
+BT
+/F1 9 Tf
+40 760 Td
+13 TL
+(TRUSTMED ACADEMIC HEALTH SYSTEM - CLINICAL LABORATORY MEDICINE) Tj
+T*
+(Comprehensive Health & Metabolic Biomarker Examination Report) Tj
+T*
+(Accreditation: CAP / CLIA Certified - SecRE-XAI Standards Compliant) Tj
+T*
+() Tj
+T*
+(========================================================================================) Tj
+T*
+(PATIENT DEMOGRAPHIC & CLINICAL ENCOUNTER) Tj
+T*
+(========================================================================================) Tj
+T*
+(Patient Identifier \(PID\) : PAT-2026-8842          Medical Record Number \(MRN\) : REC-84950) Tj
+T*
+(Patient Full Name        : Eleanor Vance          Patient Age                 : 54 Years) Tj
+T*
+(Biological Gender        : Female                    Specimen Collection Date    : 2026-08-19) Tj
+T*
+(Ordering Clinician       : Dr. Marcus Sterling, MD       Accession Number            : ACC-2026-89410) Tj
+T*
+(========================================================================================) Tj
+T*
+(BIOMARKER TEST NAME                OBSERVED VALUE        REFERENCE RANGE        CLINICAL STATUS) Tj
+T*
+(========================================================================================) Tj
+T*
+(Fasting Blood Sugar \(FBS\)          168.0 mg/dL          70.0 - 99.0 mg/dL      ELEVATED \(ADA\)) Tj
+T*
+(Blood Pressure \(Systolic/Diastolic\)154/96 mmHg          90-119 / 60-79 mmHg    STAGE 2 HYPERTENSION) Tj
+T*
+(Body Mass Index \(BMI\)              32.8 kg/m2          18.5 - 24.9 kg/m2      OBESE \(WHO\)) Tj
+T*
+(Total Serum Cholesterol            245.0 mg/dL         < 200.0 mg/dL          HIGH \(NCEP\)) Tj
+T*
+(Fasting Serum Insulin              28.0 uIU/mL          2.0 - 25.0 uIU/mL      ELEVATED) Tj
+T*
+(Resting Heart Rate                 86 bpm               60 - 100 bpm           NORMAL) Tj
+T*
+(========================================================================================) Tj
+T*
+(CLINICAL INTERPRETATION & ACTIONABLE NEXT STEPS:) Tj
+T*
+(- Glucose observed at 168.0 mg/dL evaluated against American Diabetes Association \(ADA\) plasma guidelines.) Tj
+T*
+(- Blood pressure of 154/96 mmHg evaluated against AHA/ACC 2017 clinical standards.) Tj
+T*
+(- Lipid profile and body mass index evaluated against WHO / NCEP ATP III guidelines.) Tj
+T*
+(- Verified values eligible for SecRE-XAI Dual-Ensemble Risk Inference and EVM Blockchain Anchoring.) Tj
+T*
+(========================================================================================) Tj
+T*
+(Digitally Certified by: Dr. Marcus Sterling, MD, FCAP \(License #MD-782910\)) Tj
+T*
+(Cryptographic Hash: 0x8a92f7c19b884210e5f29d74a01c38e92f1503c8 \(TrustMedAudit.sol Verified\)) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000010 00000 n 
+0000000060 00000 n 
+0000000117 00000 n 
+0000000224 00000 n 
+0000001850 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1920
+%%EOF

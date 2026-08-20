@@ -2,6 +2,13 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  --breakpoint-3xl: 120rem; /* 1920px (Full HD / 2K) */
+  --breakpoint-4xl: 160rem; /* 2560px (2K QHD / Ultrawide) */
+  --breakpoint-5xl: 240rem; /* 3840px (4K UHD) */
+  --breakpoint-6xl: 480rem; /* 7680px (8K UHD) */
+}
+
 @layer base {
   :root {
     --background: #f8fafc;
@@ -93,3 +100,18 @@ html.dark body {
 .animate-fade-in {
   animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+@media print {
+  aside, nav, header, footer, button, .no-print {
+    display: none !important;
+  }
+  body, html {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .print-clean {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+  }
+}
+

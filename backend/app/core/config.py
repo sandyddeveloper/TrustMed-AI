@@ -61,9 +61,11 @@ class Settings(BaseSettings):
     IPFS_GATEWAY: str = "https://ipfs.io/ipfs/"
     IPFS_API_URL: str = "http://localhost:5001/api/v0"
 
-    # XAI Settings
+    # XAI & Generative AI Settings
     XAI_DEFAULT_METHOD: str = "shap"
     XAI_NUM_BACKGROUND_SAMPLES: int = 100
+    GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-flash"
 
     model_config = SettingsConfigDict(
         env_file=".env",

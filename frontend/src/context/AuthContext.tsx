@@ -1,16 +1,41 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import {
+  signupUser,
+  loginUser,
+  logoutUser,
+  fetchCurrentUser,
+  UserSignupRequest,
+  UserResponse,
+} from "@/lib/api";
 import { connectWallet, getWeb3Provider } from "@/lib/web3";
 
-export type PractitionerRole = "Chief Medical Officer" | "Clinical Radiologist" | "Cardiologist" | "AI Safety Auditor";
+export type PractitionerRole =
+  | "Chief Medical Officer"
+  | "Clinical Radiologist"
+  | "Cardiologist"
+  | "AI Safety Auditor"
+  | "Patient";
 
 export interface PractitionerUser {
+  id?: number;
   address: string;
-  role: PractitionerRole;
+  role: PractitionerRole | string;
   licenseNumber: string;
   institution: string;
-  authSignature: string;
+  email?: string;
+  phone_number?: string;
+  patient_id?: string;
+  record_number?: string;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  age?: number;
+  gender?: string;
+  npi_number?: string;
+  wallet_address?: string;
+  authSignature?: string;
   issuedAt: string;
 }
 
@@ -18,7 +43,10 @@ interface AuthContextType {
   user: PractitionerUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  loginWithCredentials: (phoneNumber: string, password: string) => Promise<PractitionerUser>;
+  signupWithCredentials: (payload: UserSignupRequest) => Promise<PractitionerUser>;
   loginWithWeb3: (role: PractitionerRole, licenseNumber: string, institution: string) => Promise<PractitionerUser>;
+  loginWithDemo: () => Promise<PractitionerUser>;
   logout: () => void;
 }
 
@@ -26,7 +54,16 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  loginWithCredentials: async () => {
+    throw new Error("AuthProvider not initialized");
+  },
+  signupWithCredentials: async () => {
+    throw new Error("AuthProvider not initialized");
+  },
   loginWithWeb3: async () => {
+    throw new Error("AuthProvider not initialized");
+  },
+  loginWithDemo: async () => {
     throw new Error("AuthProvider not initialized");
   },
   logout: () => {},
@@ -37,8 +74,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check saved session in localStorage
+    // 1. Check saved session
     const saved = localStorage.getItem("trustmed_practitioner_session");
+    const token = localStorage.getItem("trustmed_jwt_token");
+
     if (saved) {
       try {
         const parsed: PractitionerUser = JSON.parse(saved);
@@ -47,8 +86,117 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem("trustmed_practitioner_session");
       }
     }
-    setIsLoading(false);
+
+    // 2. Validate token against backend if available
+    if (token) {
+      fetchCurrentUser()
+        .then((res: UserResponse) => {
+          const updatedUser: PractitionerUser = {
+            id: res.id,
+            address: res.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
+            role: res.role as PractitionerRole,
+            licenseNumber: res.npi_number || res.patient_id || "MD-9824-BOS",
+            institution: res.address || "TrustMed Health System",
+            email: res.email,
+            phone_number: res.phone_number,
+            patient_id: res.patient_id,
+            record_number: res.record_number,
+            first_name: res.first_name,
+            last_name: res.last_name,
+            full_name: res.full_name || `${res.first_name || ""} ${res.last_name || ""}`.trim(),
+            age: res.age,
+            gender: res.gender,
+            npi_number: res.npi_number,
+            wallet_address: res.wallet_address,
+            issuedAt: new Date().toISOString(),
+          };
+          setUser(updatedUser);
+          localStorage.setItem("trustmed_practitioner_session", JSON.stringify(updatedUser));
+        })
+        .catch(() => {
+          // Token expired or server unreachable
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
   }, []);
+
+  const setAuthSession = (token: string, practitionerUser: PractitionerUser) => {
+    localStorage.setItem("trustmed_jwt_token", token);
+    localStorage.setItem("trustmed_practitioner_session", JSON.stringify(practitionerUser));
+    document.cookie = `trustmed_access_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+    setUser(practitionerUser);
+  };
+
+  const loginWithCredentials = async (
+    phoneNumber: string,
+    password: string
+  ): Promise<PractitionerUser> => {
+    setIsLoading(true);
+    try {
+      const res = await loginUser({ phone_number: phoneNumber, password });
+      const u = res.user;
+      const practitionerUser: PractitionerUser = {
+        id: u.id,
+        address: u.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
+        role: (u.role as PractitionerRole) || "Patient",
+        licenseNumber: u.npi_number || u.patient_id || "REC-PENDING",
+        institution: u.address || "TrustMed Clinical Health System",
+        email: u.email,
+        phone_number: u.phone_number,
+        patient_id: u.patient_id,
+        record_number: u.record_number,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        full_name: u.full_name || `${u.first_name || ""} ${u.last_name || ""}`.trim(),
+        age: u.age,
+        gender: u.gender,
+        npi_number: u.npi_number,
+        wallet_address: u.wallet_address,
+        issuedAt: new Date().toISOString(),
+      };
+      setAuthSession(res.access_token, practitionerUser);
+      return practitionerUser;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signupWithCredentials = async (
+    payload: UserSignupRequest
+  ): Promise<PractitionerUser> => {
+    setIsLoading(true);
+    try {
+      const res = await signupUser(payload);
+      const u = res.user;
+      const practitionerUser: PractitionerUser = {
+        id: u.id,
+        address: u.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
+        role: (u.role as PractitionerRole) || payload.role || "Patient",
+        licenseNumber: u.npi_number || u.patient_id || "REC-PENDING",
+        institution: payload.address || "TrustMed Clinical Health System",
+        email: u.email,
+        phone_number: u.phone_number,
+        patient_id: u.patient_id,
+        record_number: u.record_number,
+        first_name: u.first_name,
+        last_name: u.last_name,
+        full_name: u.full_name || `${u.first_name || ""} ${u.last_name || ""}`.trim(),
+        age: u.age,
+        gender: u.gender,
+        npi_number: u.npi_number,
+        wallet_address: u.wallet_address,
+        issuedAt: new Date().toISOString(),
+      };
+      setAuthSession(res.access_token, practitionerUser);
+      return practitionerUser;
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loginWithWeb3 = async (
     role: PractitionerRole,
@@ -57,10 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   ): Promise<PractitionerUser> => {
     setIsLoading(true);
     try {
-      // 1. Connect Ethereum wallet
       const { address } = await connectWallet();
-
-      // 2. Request EIP-712 / Personal SIWE challenge signature from the connected wallet
       const provider = await getWeb3Provider();
       if (!provider) {
         throw new Error("No Web3 provider found.");
@@ -78,38 +223,68 @@ Sign this cryptographic message to authenticate your clinical practitioner crede
 Practitioner Address: ${address}
 Clinical Role: ${role}
 License Identifier: ${licenseNumber}
-Institution: ${institution}
-Nonce: 0x${nonce}
-Issued At: ${timestamp}
-Standard: IEEE Access SecRE-XAI Verified`;
+Medical Institution: ${institution}
+Challenge Nonce: ${nonce}
+Timestamp: ${timestamp}
+Standard: IEEE Access SecRE-XAI & HIPAA Tier-1 Compliant
+======================================================`;
 
-      let signature = "";
-      try {
-        signature = await signer.signMessage(challengeMessage);
-      } catch (err: unknown) {
-        throw new Error(`Signature request rejected: ${(err as Error).message || "User cancelled signature."}`);
-      }
+      const signature = await signer.signMessage(challengeMessage);
 
-      const authenticatedPractitioner: PractitionerUser = {
+      const practitionerUser: PractitionerUser = {
         address,
         role,
         licenseNumber,
         institution,
+        patient_id: `PAT-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+        record_number: `REC-${Math.floor(10000 + Math.random() * 90000)}`,
         authSignature: signature,
         issuedAt: timestamp,
       };
 
-      setUser(authenticatedPractitioner);
-      localStorage.setItem("trustmed_practitioner_session", JSON.stringify(authenticatedPractitioner));
-      return authenticatedPractitioner;
+      setAuthSession(`web3-mock-${address.slice(0, 10)}`, practitionerUser);
+      return practitionerUser;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
+  const loginWithDemo = async (): Promise<PractitionerUser> => {
+    setIsLoading(true);
+    try {
+      const demoUser: PractitionerUser = {
+        id: 1,
+        address: "0x71C84010a3b08803450942475E2582775a6fA6f1",
+        role: "Patient",
+        licenseNumber: "REC-94821",
+        institution: "TrustMed Clinical Health System",
+        email: "patient.demo@trustmed.ai",
+        phone_number: "+1-555-019-2834",
+        patient_id: "PAT-2026-1042",
+        record_number: "REC-94821",
+        first_name: "Sarah",
+        last_name: "Jenkins",
+        full_name: "Sarah Jenkins",
+        authSignature: "0x7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a",
+        issuedAt: new Date().toISOString(),
+      };
+      setAuthSession("demo-jwt-token-valid-patient", demoUser);
+      return demoUser;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await logoutUser();
+    } catch {
+      // Best effort
+    }
+    localStorage.removeItem("trustmed_jwt_token");
     localStorage.removeItem("trustmed_practitioner_session");
+    document.cookie = "trustmed_access_token=; path=/; max-age=0";
+    setUser(null);
   };
 
   return (
@@ -118,7 +293,10 @@ Standard: IEEE Access SecRE-XAI Verified`;
         user,
         isAuthenticated: !!user,
         isLoading,
+        loginWithCredentials,
+        signupWithCredentials,
         loginWithWeb3,
+        loginWithDemo,
         logout,
       }}
     >
@@ -128,5 +306,9 @@ Standard: IEEE Access SecRE-XAI Verified`;
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 }
