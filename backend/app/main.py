@@ -78,18 +78,15 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS configuration
-    origins = (
-        settings.ALLOWED_ORIGINS
-        if isinstance(settings.ALLOWED_ORIGINS, list)
-        else ["*"]
-    )
+    # CORS configuration with regex support for Vercel, ngrok, and all local/production origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=["*"],
+        allow_origin_regex=r"https?://.*",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
 
     # Mount API Routers
