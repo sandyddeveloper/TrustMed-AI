@@ -226,13 +226,13 @@ export default function AuthPage() {
               </div>
             </div>
 
-            <button
-              onClick={() => router.push("/dashboard")}
+            <Link
+              href="/dashboard"
               className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-emerald-600/25 flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
             >
               <span>Enter Doctor CDSS Workspace</span>
               <ArrowRight className="w-4 h-4" />
-            </button>
+            </Link>
           </div>
         ) : isAuthenticated && user ? (
           <div className="bg-white dark:bg-slate-900/60 backdrop-blur-sm border border-emerald-200 dark:border-slate-800 rounded-3xl p-8 shadow-xl shadow-emerald-900/5 dark:shadow-none space-y-6 max-w-xl mx-auto animate-fade-in">
