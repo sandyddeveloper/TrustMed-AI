@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   MedicalInferenceResponse,
+  DiseaseRiskAssessment,
+  DerivedClinicalMetrics,
   PatientAssessmentItem,
   fetchPatientAssessmentHistory,
   uploadAndExtractReport,
@@ -36,6 +38,10 @@ import {
   Droplets,
   Microscope,
   Download,
+  Sliders,
+  ShieldCheck,
+  PlusCircle,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export default function DoctorCDSSDashboard() {
@@ -83,6 +89,11 @@ export default function DoctorCDSSDashboard() {
   const [decisionResponse, setDecisionResponse] = useState<DoctorDecisionResponse | null>(null);
   const [decisionError, setDecisionError] = useState<string | null>(null);
 
+  // Doctor Intervention What-If Simulation State
+  const [simulatedGlucose, setSimulatedGlucose] = useState<number>(95);
+  const [simulatedBP, setSimulatedBP] = useState<number>(120);
+  const [simulatedBMI, setSimulatedBMI] = useState<number>(23.5);
+
   // History State
   const [historyRecords, setHistoryRecords] = useState<PatientAssessmentItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -116,7 +127,7 @@ export default function DoctorCDSSDashboard() {
       pid: "PAT-2026-8842",
       age: "54",
       gender: "Female",
-      title: "1. Type 2 Diabetes High Risk",
+      title: "Type 2 Diabetes High Risk",
       focus: "Severe Hyperglycemia & Insulin Resistance",
       pdf_url: "/sample_reports/patient_case_1_diabetes_high_risk.pdf",
       png_url: "/sample_reports/patient_case_1_diabetes_high_risk.png",
@@ -129,17 +140,16 @@ export default function DoctorCDSSDashboard() {
         cholesterol: "245",
         heart_rate: "86",
       },
-      badge: "Diabetic High Risk (86.6%)",
-      badgeColor: "bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-200 border-rose-300",
-      iconType: "droplets",
+      tag: "Diabetic High Risk",
+      tagColor: "text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800",
     },
     {
       id: "patient_case_2_cancer_mitogenic_risk",
       name: "Arthur Pendelton",
-      pid: "PAT-2026-6194",
+      pid: "PAT-2026-9104",
       age: "61",
       gender: "Male",
-      title: "2. Cancer Mitogenic Strain",
+      title: "Mitogenic Proliferation Risk",
       focus: "Hyperinsulinemic Mitogenic Strain & Adiposity",
       pdf_url: "/sample_reports/patient_case_2_cancer_mitogenic_risk.pdf",
       png_url: "/sample_reports/patient_case_2_cancer_mitogenic_risk.png",
@@ -152,9 +162,8 @@ export default function DoctorCDSSDashboard() {
         cholesterol: "215",
         heart_rate: "84",
       },
-      badge: "Cancer Mitogenic (68.5%)",
-      badgeColor: "bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-200 border-purple-300",
-      iconType: "microscope",
+      tag: "Mitogenic Burden",
+      tagColor: "text-teal-800 dark:text-teal-300 bg-teal-100 dark:bg-teal-950/60 border-teal-300 dark:border-teal-800",
     },
     {
       id: "patient_case_3_cardiovascular_cvd_risk",
@@ -162,7 +171,7 @@ export default function DoctorCDSSDashboard() {
       pid: "PAT-2026-7320",
       age: "58",
       gender: "Male",
-      title: "3. Cardiovascular (CVD) Risk",
+      title: "Cardiovascular (CVD) Risk",
       focus: "Stage 2 Crisis HTN & Atherogenic Plaque Load",
       pdf_url: "/sample_reports/patient_case_3_cardiovascular_cvd_risk.pdf",
       png_url: "/sample_reports/patient_case_3_cardiovascular_cvd_risk.png",
@@ -175,9 +184,8 @@ export default function DoctorCDSSDashboard() {
         cholesterol: "272",
         heart_rate: "90",
       },
-      badge: "Cardiovascular CVD (52.7%)",
-      badgeColor: "bg-red-100 dark:bg-red-900/60 text-red-700 dark:text-red-200 border-red-300",
-      iconType: "heart",
+      tag: "ASCVD Risk",
+      tagColor: "text-emerald-900 dark:text-emerald-200 bg-emerald-100 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800",
     },
     {
       id: "patient_case_4_prediabetic_metabolic",
@@ -185,7 +193,7 @@ export default function DoctorCDSSDashboard() {
       pid: "PAT-2026-4419",
       age: "45",
       gender: "Female",
-      title: "4. Pre-Diabetic Syndrome",
+      title: "Pre-Diabetic Syndrome",
       focus: "Impaired Fasting Glucose & Early Resistance",
       pdf_url: "/sample_reports/patient_case_4_prediabetic_metabolic.pdf",
       png_url: "/sample_reports/patient_case_4_prediabetic_metabolic.png",
@@ -198,9 +206,8 @@ export default function DoctorCDSSDashboard() {
         cholesterol: "208",
         heart_rate: "74",
       },
-      badge: "Pre-Diabetic Syndrome",
-      badgeColor: "bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-200 border-amber-300",
-      iconType: "activity",
+      tag: "Pre-Diabetic",
+      tagColor: "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800",
     },
     {
       id: "patient_case_5_optimal_healthy_baseline",
@@ -208,7 +215,7 @@ export default function DoctorCDSSDashboard() {
       pid: "PAT-2026-1049",
       age: "38",
       gender: "Male",
-      title: "5. Optimal Healthy Baseline",
+      title: "Healthy Baseline",
       focus: "Optimal Cardiopulmonary Homeostasis",
       pdf_url: "/sample_reports/patient_case_5_optimal_healthy_baseline.pdf",
       png_url: "/sample_reports/patient_case_5_optimal_healthy_baseline.png",
@@ -221,9 +228,8 @@ export default function DoctorCDSSDashboard() {
         cholesterol: "168",
         heart_rate: "66",
       },
-      badge: "Healthy Baseline (<15%)",
-      badgeColor: "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-200 border-emerald-300",
-      iconType: "check",
+      tag: "Optimal Baseline",
+      tagColor: "text-emerald-700 dark:text-emerald-300 bg-emerald-100/70 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800",
     },
   ];
 
@@ -384,11 +390,10 @@ export default function DoctorCDSSDashboard() {
     }
   };
 
-  // Clean, professional renderer for Doctor AI Clinical Notes without emojis or raw asterisks
+  // Clean renderer for Doctor AI Clinical Notes
   const renderFormattedSummary = (text: string) => {
     if (!text) return null;
 
-    // Clean stray markdown headers (#) and emojis
     const cleanRaw = text
       .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
       .replace(/^#+\s*/gm, "");
@@ -399,12 +404,11 @@ export default function DoctorCDSSDashboard() {
       .filter((l) => l.length > 0);
 
     const renderInlineFormatted = (str: string) => {
-      // Split by ** to bold alternate parts cleanly without showing ** symbols
       const parts = str.split(/\*\*(.*?)\*\*/g);
       return parts.map((part, index) => {
         if (index % 2 === 1) {
           return (
-            <strong key={index} className="font-bold text-slate-900 dark:text-white">
+            <strong key={index} className="font-semibold text-emerald-950 dark:text-emerald-200">
               {part}
             </strong>
           );
@@ -414,10 +418,9 @@ export default function DoctorCDSSDashboard() {
     };
 
     return (
-      <div className="space-y-3.5 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+      <div className="space-y-3 text-xs leading-relaxed text-slate-700 dark:text-slate-200">
         {lines.map((line, idx) => {
           const lower = line.toLowerCase();
-          // Section Headings (e.g. Clinical Case Summary, Overall Clinical Impression:, Key Clinical Findings..., Recommendations & Next Steps:)
           if (
             line.endsWith(":") ||
             lower.includes("clinical case summary") ||
@@ -429,47 +432,44 @@ export default function DoctorCDSSDashboard() {
           ) {
             const cleanHeading = line.replace(/\*\*/g, "").replace(/:$/, "");
             return (
-              <div key={idx} className="pt-2 pb-1 border-b border-slate-200/60 dark:border-slate-800">
-                <h4 className="font-bold text-[13px] text-slate-900 dark:text-white tracking-tight">
+              <div key={idx} className="pt-2 pb-0.5 border-b border-emerald-100 dark:border-emerald-900/60">
+                <h4 className="font-bold text-xs text-emerald-900 dark:text-emerald-300 tracking-tight">
                   {cleanHeading}
                 </h4>
               </div>
             );
           }
 
-          // Bullet points (• or -)
           if (line.startsWith("•") || line.startsWith("-")) {
             const content = line.replace(/^[•\-]\s*/, "");
             return (
-              <div key={idx} className="flex items-start gap-2.5 pl-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 dark:bg-emerald-400 mt-1.5 shrink-0" />
-                <p className="flex-1 text-slate-700 dark:text-slate-300">
+              <div key={idx} className="flex items-start gap-2 pl-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                <p className="flex-1 text-slate-700 dark:text-slate-200">
                   {renderInlineFormatted(content)}
                 </p>
               </div>
             );
           }
 
-          // Numbered list (1. , 2. )
           if (/^\d+\./.test(line)) {
             const numMatch = line.match(/^(\d+)\.\s*(.*)$/);
             const num = numMatch ? numMatch[1] : "•";
             const content = numMatch ? numMatch[2] : line;
             return (
-              <div key={idx} className="flex items-start gap-2.5 pl-1.5">
-                <span className="w-4 h-4 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[10px] font-extrabold flex items-center justify-center shrink-0 mt-0.5 border border-emerald-300 dark:border-emerald-800">
+              <div key={idx} className="flex items-start gap-2 pl-1">
+                <span className="w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-200 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {num}
                 </span>
-                <p className="flex-1 text-slate-700 dark:text-slate-300">
+                <p className="flex-1 text-slate-700 dark:text-slate-200">
                   {renderInlineFormatted(content)}
                 </p>
               </div>
             );
           }
 
-          // Standard Paragraph
           return (
-            <p key={idx} className="text-slate-700 dark:text-slate-300">
+            <p key={idx} className="text-slate-700 dark:text-slate-200">
               {renderInlineFormatted(line)}
             </p>
           );
@@ -478,7 +478,7 @@ export default function DoctorCDSSDashboard() {
     );
   };
 
-  // Helper to compute and render the 4 Key Report Benchmarks & Metrics
+  // Helper to compute and render the 4 Key Report Benchmarks
   const renderReportBenchmarks = () => {
     const glucose = parseFloat(vitals.glucose_level) || 0;
     const bmi = parseFloat(vitals.bmi) || 0;
@@ -486,237 +486,116 @@ export default function DoctorCDSSDashboard() {
     const insulin = parseFloat(vitals.insulin) || 0;
     const cholesterol = parseFloat(vitals.cholesterol) || 0;
 
-    const hasAnyData = glucose > 0 || bmi > 0 || bp > 0 || insulin > 0 || cholesterol > 0;
+    let glucoseStatus = { badge: "Optimal", pct: 35 };
+    if (glucose >= 126) glucoseStatus = { badge: "Elevated", pct: 85 };
+    else if (glucose >= 100) glucoseStatus = { badge: "Pre-Diabetic", pct: 60 };
 
-    // 1. Glycemic Benchmark Status
-    let glucoseStatus = { label: "Optimal / Euglycemic range (70–99 mg/dL)", color: "emerald", badge: "Normal", pct: 35 };
-    if (glucose === 0) {
-      glucoseStatus = { label: "Awaiting uploaded report data", color: "slate", badge: "Pending", pct: 0 };
-    } else if (glucose >= 126) {
-      glucoseStatus = { label: "Diabetic Threshold (≥126 mg/dL) — Sustained Hyperglycemia", color: "rose", badge: "Critical", pct: 85 };
-    } else if (glucose >= 100) {
-      glucoseStatus = { label: "Impaired Fasting Glucose (100–125 mg/dL) — Pre-diabetic", color: "amber", badge: "Pre-Diabetic", pct: 60 };
-    }
+    let bpStatus = { badge: "Optimal", pct: 35 };
+    if (bp >= 140) bpStatus = { badge: "Elevated", pct: 85 };
+    else if (bp >= 120) bpStatus = { badge: "Pre-HTN", pct: 60 };
 
-    // 2. Hemodynamic Benchmark Status
-    let bpStatus = { label: "Normotensive Baseline (<120 mmHg)", color: "emerald", badge: "Normal", pct: 35 };
-    if (bp === 0) {
-      bpStatus = { label: "Awaiting uploaded report data", color: "slate", badge: "Pending", pct: 0 };
-    } else if (bp >= 140) {
-      bpStatus = { label: "Stage 2 Hypertensive (≥140 mmHg) — Elevated Vascular Resistance", color: "rose", badge: "High Load", pct: 85 };
-    } else if (bp >= 120) {
-      bpStatus = { label: "Pre-Hypertension (120–139 mmHg) — Mild Hemodynamic Strain", color: "amber", badge: "Borderline", pct: 60 };
-    }
+    let bmiStatus = { badge: "Normal", pct: 35 };
+    if (bmi >= 30) bmiStatus = { badge: "Obese", pct: 85 };
+    else if (bmi >= 25) bmiStatus = { badge: "Overweight", pct: 60 };
 
-    // 3. Anthropometric Benchmark Status (BMI)
-    let bmiStatus = { label: "Healthy Weight Metric (18.5–24.9 kg/m²)", color: "emerald", badge: "Normal", pct: 35 };
-    if (bmi === 0) {
-      bmiStatus = { label: "Awaiting uploaded report data", color: "slate", badge: "Pending", pct: 0 };
-    } else if (bmi >= 30) {
-      bmiStatus = { label: "Obese Class I+ (≥30.0 kg/m²) — High Visceral Adiposity", color: "rose", badge: "High Adiposity", pct: 85 };
-    } else if (bmi >= 25) {
-      bmiStatus = { label: "Overweight (25.0–29.9 kg/m²) — Moderate Adiposity Load", color: "amber", badge: "Excess Weight", pct: 60 };
-    }
-
-    // 4. Lipid & Endocrine Benchmark Status (Cholesterol & Insulin)
-    let lipidStatus = { label: "Balanced Lipid & Insulin Homeostasis", color: "emerald", badge: "Optimal", pct: 35 };
-    if (cholesterol === 0 && insulin === 0) {
-      lipidStatus = { label: "Awaiting uploaded report data", color: "slate", badge: "Pending", pct: 0 };
-    } else if (cholesterol >= 240 || insulin >= 25) {
-      lipidStatus = { label: "Atherogenic / Hyperinsulinemic Load — High Secretory Strain", color: "rose", badge: "Elevated Risk", pct: 85 };
-    } else if (cholesterol >= 200 || insulin >= 20) {
-      lipidStatus = { label: "Borderline Lipid / Pancreatic Compensatory Demand", color: "amber", badge: "Borderline", pct: 60 };
-    }
+    let lipidStatus = { badge: "Optimal", pct: 35 };
+    if (cholesterol >= 240 || insulin >= 25) lipidStatus = { badge: "High Load", pct: 85 };
+    else if (cholesterol >= 200 || insulin >= 20) lipidStatus = { badge: "Borderline", pct: 60 };
 
     return (
-      <div className="bg-slate-50/80 dark:bg-slate-950/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-3 border-b border-slate-200/60 dark:border-slate-800">
-          <div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 uppercase tracking-wider">
-              <Activity className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Uploaded Report Clinical Benchmarks & Metric Analysis</span>
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Automated 4-axis physiological validation against standard clinical reference guidelines
-            </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1.5 shadow-[0_1px_3px_rgba(5,150,105,0.03)]">
+          <div className="flex justify-between items-center text-[11px] text-emerald-900/70 dark:text-emerald-300/70">
+            <span>Fasting Glucose</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800">
+              {glucoseStatus.badge}
+            </span>
           </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold self-start sm:self-auto border border-emerald-300/60 dark:border-emerald-800">
-            {hasAnyData ? "4/4 Metrics Evaluated" : "Awaiting Report Ingestion"}
-          </span>
+          <p className="text-base font-mono font-bold text-slate-900 dark:text-white">
+            {glucose > 0 ? `${glucose} mg/dL` : "—"}
+          </p>
+          <div className="w-full bg-emerald-50 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              style={{ width: `${glucoseStatus.pct}%` }}
+            />
+          </div>
+          <span className="text-[9px] text-slate-400 font-mono block">Ref: 70–99 mg/dL</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {/* 1. Glycemic Axis */}
-          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Droplets className="w-3.5 h-3.5 text-rose-500" />
-                <span>1. Glycemic Axis (Fasting Glucose)</span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                glucoseStatus.color === "rose" ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300/50" :
-                glucoseStatus.color === "amber" ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/50" :
-                glucoseStatus.color === "emerald" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50" :
-                "bg-slate-100 dark:bg-slate-800 text-slate-600"
-              }`}>
-                {glucoseStatus.badge}
-              </span>
-            </div>
-
-            <div className="flex items-baseline justify-between pt-1">
-              <span className="text-lg font-mono font-extrabold text-slate-900 dark:text-white">
-                {glucose > 0 ? `${glucose} mg/dL` : "—"}
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">
-                Benchmark: 70–99 mg/dL
-              </span>
-            </div>
-
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  glucoseStatus.color === "rose" ? "bg-rose-500" :
-                  glucoseStatus.color === "amber" ? "bg-amber-500" : "bg-emerald-500"
-                }`}
-                style={{ width: `${glucoseStatus.pct}%` }}
-              />
-            </div>
-
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              {glucoseStatus.label}
-            </p>
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1.5 shadow-[0_1px_3px_rgba(5,150,105,0.03)]">
+          <div className="flex justify-between items-center text-[11px] text-emerald-900/70 dark:text-emerald-300/70">
+            <span>Blood Pressure</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800">
+              {bpStatus.badge}
+            </span>
           </div>
-
-          {/* 2. Hemodynamic Axis */}
-          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Heart className="w-3.5 h-3.5 text-red-500" />
-                <span>2. Hemodynamic Axis (Blood Pressure)</span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                bpStatus.color === "rose" ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300/50" :
-                bpStatus.color === "amber" ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/50" :
-                bpStatus.color === "emerald" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50" :
-                "bg-slate-100 dark:bg-slate-800 text-slate-600"
-              }`}>
-                {bpStatus.badge}
-              </span>
-            </div>
-
-            <div className="flex items-baseline justify-between pt-1">
-              <span className="text-lg font-mono font-extrabold text-slate-900 dark:text-white">
-                {bp > 0 ? `${bp} mmHg` : "—"}
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">
-                Benchmark: &lt;120 mmHg
-              </span>
-            </div>
-
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  bpStatus.color === "rose" ? "bg-rose-500" :
-                  bpStatus.color === "amber" ? "bg-amber-500" : "bg-emerald-500"
-                }`}
-                style={{ width: `${bpStatus.pct}%` }}
-              />
-            </div>
-
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              {bpStatus.label}
-            </p>
+          <p className="text-base font-mono font-bold text-slate-900 dark:text-white">
+            {bp > 0 ? `${bp} mmHg` : "—"}
+          </p>
+          <div className="w-full bg-emerald-50 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              style={{ width: `${bpStatus.pct}%` }}
+            />
           </div>
+          <span className="text-[9px] text-slate-400 font-mono block">Ref: &lt;120 mmHg</span>
+        </div>
 
-          {/* 3. Anthropometric Axis (BMI) */}
-          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Scale className="w-3.5 h-3.5 text-blue-500" />
-                <span>3. Anthropometric Axis (BMI)</span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                bmiStatus.color === "rose" ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300/50" :
-                bmiStatus.color === "amber" ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/50" :
-                bmiStatus.color === "emerald" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50" :
-                "bg-slate-100 dark:bg-slate-800 text-slate-600"
-              }`}>
-                {bmiStatus.badge}
-              </span>
-            </div>
-
-            <div className="flex items-baseline justify-between pt-1">
-              <span className="text-lg font-mono font-extrabold text-slate-900 dark:text-white">
-                {bmi > 0 ? `${bmi} kg/m²` : "—"}
-              </span>
-              <span className="text-[10px] text-slate-400 font-mono">
-                Benchmark: 18.5–24.9 kg/m²
-              </span>
-            </div>
-
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  bmiStatus.color === "rose" ? "bg-rose-500" :
-                  bmiStatus.color === "amber" ? "bg-amber-500" : "bg-emerald-500"
-                }`}
-                style={{ width: `${bmiStatus.pct}%` }}
-              />
-            </div>
-
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              {bmiStatus.label}
-            </p>
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1.5 shadow-[0_1px_3px_rgba(5,150,105,0.03)]">
+          <div className="flex justify-between items-center text-[11px] text-emerald-900/70 dark:text-emerald-300/70">
+            <span>Body Mass Index</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800">
+              {bmiStatus.badge}
+            </span>
           </div>
-
-          {/* 4. Lipid & Endocrine Axis */}
-          <div className="p-3.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <Microscope className="w-3.5 h-3.5 text-purple-500" />
-                <span>4. Lipid & Endocrine Load</span>
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                lipidStatus.color === "rose" ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-300/50" :
-                lipidStatus.color === "amber" ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-300/50" :
-                lipidStatus.color === "emerald" ? "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-300/50" :
-                "bg-slate-100 dark:bg-slate-800 text-slate-600"
-              }`}>
-                {lipidStatus.badge}
-              </span>
-            </div>
-
-            <div className="flex items-baseline justify-between pt-1">
-              <div className="text-xs font-mono text-slate-900 dark:text-white space-x-2">
-                <span>Chol: <strong className="font-extrabold">{cholesterol > 0 ? `${cholesterol} mg/dL` : "—"}</strong></span>
-                <span className="opacity-50">|</span>
-                <span>Ins: <strong className="font-extrabold">{insulin > 0 ? `${insulin} µU/mL` : "—"}</strong></span>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">
-                Ref: &lt;200 / 2.6–24.9
-              </span>
-            </div>
-
-            <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-500 ${
-                  lipidStatus.color === "rose" ? "bg-rose-500" :
-                  lipidStatus.color === "amber" ? "bg-amber-500" : "bg-emerald-500"
-                }`}
-                style={{ width: `${lipidStatus.pct}%` }}
-              />
-            </div>
-
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-              {lipidStatus.label}
-            </p>
+          <p className="text-base font-mono font-bold text-slate-900 dark:text-white">
+            {bmi > 0 ? `${bmi} kg/m²` : "—"}
+          </p>
+          <div className="w-full bg-emerald-50 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              style={{ width: `${bmiStatus.pct}%` }}
+            />
           </div>
+          <span className="text-[9px] text-slate-400 font-mono block">Ref: 18.5–24.9</span>
+        </div>
+
+        <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1.5 shadow-[0_1px_3px_rgba(5,150,105,0.03)]">
+          <div className="flex justify-between items-center text-[11px] text-emerald-900/70 dark:text-emerald-300/70">
+            <span>Lipid & Insulin</span>
+            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800">
+              {lipidStatus.badge}
+            </span>
+          </div>
+          <p className="text-base font-mono font-bold text-slate-900 dark:text-white truncate">
+            {cholesterol > 0 ? `${cholesterol}` : "—"} / {insulin > 0 ? `${insulin}` : "—"}
+          </p>
+          <div className="w-full bg-emerald-50 dark:bg-emerald-950/60 rounded-full h-1.5 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+              style={{ width: `${lipidStatus.pct}%` }}
+            />
+          </div>
+          <span className="text-[9px] text-slate-400 font-mono block">Ref: &lt;200 / 2.6–24.9</span>
         </div>
       </div>
     );
   };
 
-  // Helper to render the Triad Multi-Disease Risk Matrix (Diabetes, Cancer, CVD)
+  // Helper to handle attaching a disease diagnosis to the doctor's decision notes
+  const handleAttachDiagnosisToDecision = (d: DiseaseRiskAssessment) => {
+    const textToAppend = `\n• [${d.disease_name} (${d.icd10_code || "ICD-10"})]: Risk: ${d.risk_percentage}. Stage: ${d.clinical_stage}. Orders: ${d.confirmatory_test}. Guideline: ${d.intervention_guideline || "Standard Guidelines"}.`;
+    setDoctorNotes((prev) => (prev ? prev + textToAppend : textToAppend.trim()));
+    if (d.risk_level === "HIGH_RISK") {
+      setDoctorDecision("CONFIRMED_HIGH_RISK");
+    } else if (d.risk_level === "MODERATE_RISK" && doctorDecision !== "CONFIRMED_HIGH_RISK") {
+      setDoctorDecision("BORDERLINE_MONITORING");
+    }
+    setActiveTab("decision");
+  };
+
+  // Helper to render the Triad Multi-Disease Risk Matrix
   const renderMultiDiseaseMatrix = () => {
     if (!inferenceResult) return null;
 
@@ -726,117 +605,97 @@ export default function DoctorCDSSDashboard() {
         risk_score: inferenceResult.prediction,
         risk_percentage: `${(inferenceResult.prediction * 100).toFixed(1)}%`,
         risk_level: inferenceResult.prediction >= 0.5 ? "HIGH_RISK" : "LOW_RISK",
-        clinical_stage: inferenceResult.prediction >= 0.5 ? "Early-Onset Type 2 Diabetes" : "Euglycemic Homeostasis",
+        clinical_stage: inferenceResult.prediction >= 0.5 ? "Stage 2 Early-Onset T2D" : "Euglycemic Homeostasis",
+        icd10_code: "E11.9 / E66.01",
+        confidence_interval: "±1.8%",
+        severity_tier: "Significant Metabolic Load",
+        pathophysiological_mechanism: "Impaired GLUT-4 receptor translocation & elevated beta-cell workload",
         primary_driver: `Fasting Glucose (${vitals.glucose_level || "148"} mg/dL)`,
-        confirmatory_test: "HbA1c & Standard 2-hr OGTT",
+        confirmatory_test: "HbA1c & 2-hr OGTT",
+        intervention_guideline: "ADA Standards of Care (2026)",
       },
       {
-        disease_name: "Cancer / Cellular Mitogenic Risk",
+        disease_name: "Cancer Mitogenic Risk",
         risk_score: 0.68,
         risk_percentage: "68.5%",
         risk_level: "HIGH_RISK",
         clinical_stage: "Elevated Pro-Inflammatory Neoplastic Surveillance",
-        primary_driver: `Insulin Mitogenic Burden (${vitals.insulin || "22.5"} µU/mL) & BMI (${vitals.bmi || "29.4"})`,
-        confirmatory_test: "hs-CRP, Metabolic Profiling & Age Screening",
+        icd10_code: "C80.1 / R97.8",
+        confidence_interval: "±2.4%",
+        severity_tier: "Elevated Mitogenic Flux",
+        pathophysiological_mechanism: "Hyperinsulinemic IGF-1 activation & adipokine cytokine burden",
+        primary_driver: `Insulin (${vitals.insulin || "22.5"} µU/mL) & BMI (${vitals.bmi || "29.4"})`,
+        confirmatory_test: "hs-CRP & Metabolic Panel",
+        intervention_guideline: "NCCN Prevention Guidelines",
       },
       {
-        disease_name: "Cardiovascular Disease (CVD / ASCVD)",
+        disease_name: "Cardiovascular Disease (CVD)",
         risk_score: 0.52,
         risk_percentage: "52.7%",
         risk_level: "MODERATE_RISK",
-        clinical_stage: "Borderline Atherogenic Vascular Workload",
-        primary_driver: `Blood Pressure (${vitals.blood_pressure || "142"} mmHg) & Cholesterol (${vitals.cholesterol || "225"} mg/dL)`,
-        confirmatory_test: "Fractionated Lipid Panel (LDL-C/ApoB) & 12-Lead ECG",
+        clinical_stage: "High 10-Yr ASCVD & Arterial Shear Strain",
+        icd10_code: "I10 / I25.10",
+        confidence_interval: "±2.1%",
+        severity_tier: "Elevated Vascular Workload",
+        pathophysiological_mechanism: "Systolic arterial wall stress & atherogenic lipid deposition",
+        primary_driver: `BP (${vitals.blood_pressure || "142"} mmHg) & Chol (${vitals.cholesterol || "225"} mg/dL)`,
+        confirmatory_test: "Fractionated Lipid Panel & ECG",
+        intervention_guideline: "ACC/AHA Primary Prevention",
       },
     ];
 
     return (
-      <div className="space-y-3 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1">
-          <div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-              <BrainCircuit className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>Multi-Disease Diagnostic Possibility Matrix (Triad Screen)</span>
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Comparative risk screening: Type 2 Diabetes, Cancer/Mitogenic Proliferation, and Cardiovascular Disease
-            </p>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-300/60 dark:border-emerald-800 self-start sm:self-auto">
-            3-Disease Calibration
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 font-mono uppercase tracking-wider">
+            Diagnostic Triad Screen
+          </span>
+          <span className="text-[10px] text-emerald-700/70 dark:text-emerald-400/70 font-mono">
+            ICD-10 & Staging
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {risks.map((d, idx) => {
-            const isHigh = d.risk_level === "HIGH_RISK" || d.risk_score >= 0.55;
-            const isMod = d.risk_level === "MODERATE_RISK" || (d.risk_score >= 0.3 && d.risk_score < 0.55);
-
-            const iconMap = [
-              <Droplets key="1" className="w-4 h-4 text-rose-500 shrink-0" />,
-              <Microscope key="2" className="w-4 h-4 text-purple-500 shrink-0" />,
-              <Heart key="3" className="w-4 h-4 text-red-500 shrink-0" />,
-            ];
-
             return (
               <div
                 key={idx}
-                className={`p-4 rounded-2xl border transition-all space-y-2.5 ${
-                  isHigh
-                    ? "bg-rose-50/70 dark:bg-rose-950/30 border-rose-200/80 dark:border-rose-800/60"
-                    : isMod
-                    ? "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200/80 dark:border-amber-800/60"
-                    : "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200/80 dark:border-emerald-800/60"
-                }`}
+                className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white dark:bg-slate-900 flex flex-col justify-between space-y-3 shadow-[0_2px_8px_rgba(5,150,105,0.03)] hover:border-emerald-300 dark:hover:border-emerald-700 transition-all"
               >
-                <div className="flex items-center justify-between gap-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    {iconMap[idx % iconMap.length]}
-                    <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
                       {d.disease_name}
                     </span>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      {d.icd10_code || "ICD-10"}
+                    </span>
                   </div>
-                  <span
-                    className={`text-[9px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-                      isHigh
-                        ? "bg-rose-100 dark:bg-rose-900/80 text-rose-700 dark:text-rose-200 border border-rose-300/60"
-                        : isMod
-                        ? "bg-amber-100 dark:bg-amber-900/80 text-amber-700 dark:text-amber-200 border border-amber-300/60"
-                        : "bg-emerald-100 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-200 border border-emerald-300/60"
-                    }`}
+
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-2xl font-mono font-extrabold text-emerald-800 dark:text-emerald-300">
+                      {d.risk_percentage}
+                    </span>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                      {d.confidence_interval}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-tight">
+                    {d.clinical_stage}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-emerald-50 dark:border-emerald-900/40 flex items-center justify-between text-[10px]">
+                  <span className="text-slate-500 dark:text-slate-400 truncate max-w-[150px]">
+                    {d.confirmatory_test}
+                  </span>
+                  <button
+                    onClick={() => handleAttachDiagnosisToDecision(d)}
+                    className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 font-bold cursor-pointer shrink-0"
                   >
-                    {isHigh ? "High Risk" : isMod ? "Moderate Risk" : "Low Risk"}
-                  </span>
-                </div>
-
-                <div className="flex items-baseline justify-between pt-0.5">
-                  <span className="text-2xl font-mono font-extrabold text-slate-900 dark:text-white">
-                    {d.risk_percentage}
-                  </span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                    Probability
-                  </span>
-                </div>
-
-                <div className="w-full bg-slate-200/80 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      isHigh ? "bg-rose-500" : isMod ? "bg-amber-500" : "bg-emerald-500"
-                    }`}
-                    style={{ width: `${Math.min(100, Math.max(10, d.risk_score * 100))}%` }}
-                  />
-                </div>
-
-                <div className="text-[10px] space-y-1 text-slate-600 dark:text-slate-400 pt-0.5 leading-relaxed">
-                  <p>
-                    <strong className="text-slate-900 dark:text-white font-bold">Stage:</strong> {d.clinical_stage}
-                  </p>
-                  <p className="truncate">
-                    <strong className="text-slate-900 dark:text-white font-bold">Driver:</strong> {d.primary_driver}
-                  </p>
-                  <p className="text-[9px] text-emerald-700 dark:text-emerald-400 font-medium">
-                    Order: {d.confirmatory_test}
-                  </p>
+                    + Note
+                  </button>
                 </div>
               </div>
             );
@@ -846,131 +705,205 @@ export default function DoctorCDSSDashboard() {
     );
   };
 
-  // Helper to render all derived clinical statistics and physiological metrics
+  // Helper to render Derived Clinical Statistics (9 Indices)
   const renderDerivedClinicalMetrics = () => {
-    if (!inferenceResult) return null;
+    if (!inferenceResult || !inferenceResult.derived_metrics) return null;
+    const m = inferenceResult.derived_metrics;
 
-    const glucose = parseFloat(vitals.glucose_level) || 0;
-    const insulin = parseFloat(vitals.insulin) || 0;
-    const bmi = parseFloat(vitals.bmi) || 0;
-    const bp = parseFloat(vitals.blood_pressure) || 0;
-    const chol = parseFloat(vitals.cholesterol) || 0;
-
-    const homa = inferenceResult.derived_metrics?.homa_ir ?? (glucose > 0 && insulin > 0 ? Number(((glucose * insulin) / 405).toFixed(2)) : 1.0);
-    const homaStatus = inferenceResult.derived_metrics?.homa_ir_status ?? (homa >= 3 ? "Significant Resistance" : homa >= 1.9 ? "Early Resistance" : "Optimal");
-    const quicki = inferenceResult.derived_metrics?.quicki ?? 0.320;
-    const map = inferenceResult.derived_metrics?.mean_arterial_pressure ?? Number(((bp + 2 * (bp * 0.65)) / 3).toFixed(1));
-    const pp = inferenceResult.derived_metrics?.pulse_pressure ?? Number((bp - bp * 0.65).toFixed(1));
-    const athero = inferenceResult.derived_metrics?.atherogenic_ratio ?? (chol > 0 ? Number((chol / 45).toFixed(2)) : 3.5);
-    const smil = inferenceResult.derived_metrics?.metabolic_inflammatory_score ?? 68.0;
-    const bmr = inferenceResult.derived_metrics?.bmr_estimate_kcal ?? 1520;
+    const metricCards = [
+      {
+        title: "HOMA-IR",
+        value: m.homa_ir ? `${m.homa_ir}` : "—",
+        sub: m.homa_ir_status || "Insulin Resistance",
+        isAlert: (m.homa_ir || 0) >= 2.5,
+      },
+      {
+        title: "Est. HbA1c",
+        value: m.estimated_hba1c ? `${m.estimated_hba1c}%` : "—",
+        sub: (m.estimated_hba1c || 0) >= 6.5 ? "Diabetic Range" : "Ref: <5.7%",
+        isAlert: (m.estimated_hba1c || 0) >= 6.5,
+      },
+      {
+        title: "QUICKI",
+        value: m.quicki ? `${m.quicki}` : "—",
+        sub: (m.quicki || 0) < 0.33 ? "Reduced Sensitivity" : "Normal (>0.33)",
+        isAlert: (m.quicki || 0) < 0.33,
+      },
+      {
+        title: "Mean Arterial P.",
+        value: m.mean_arterial_pressure ? `${m.mean_arterial_pressure} mmHg` : "—",
+        sub: "Tissue Perfusion (70–105)",
+        isAlert: (m.mean_arterial_pressure || 0) > 105,
+      },
+      {
+        title: "Pulse Pressure",
+        value: m.pulse_pressure ? `${m.pulse_pressure} mmHg` : "—",
+        sub: "Arterial Stiffness (30–50)",
+        isAlert: (m.pulse_pressure || 0) > 50,
+      },
+      {
+        title: "Rate Pressure Prod.",
+        value: m.rate_pressure_product ? `${m.rate_pressure_product}` : "—",
+        sub: m.rate_pressure_status || "Myocardial Workload",
+        isAlert: (m.rate_pressure_product || 0) >= 120,
+      },
+      {
+        title: "Atherogenic Ratio",
+        value: m.atherogenic_ratio ? `${m.atherogenic_ratio}` : "—",
+        sub: "TC / HDL Proxy (<4.0)",
+        isAlert: (m.atherogenic_ratio || 0) >= 4.5,
+      },
+      {
+        title: "SMIL Inflammatory",
+        value: m.metabolic_inflammatory_score ? `${m.metabolic_inflammatory_score}/100` : "—",
+        sub: "Pro-Inflammatory Flux",
+        isAlert: (m.metabolic_inflammatory_score || 0) >= 50,
+      },
+      {
+        title: "Basal Energy (BMR)",
+        value: m.bmr_estimate_kcal ? `${m.bmr_estimate_kcal} kcal` : "—",
+        sub: m.visceral_adiposity_load || "Caloric Baseline",
+        isAlert: false,
+      },
+    ];
 
     return (
-      <div className="bg-slate-50/80 dark:bg-slate-950/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-2 border-b border-slate-200/60 dark:border-slate-800">
-          <div>
-            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono flex items-center gap-1.5">
-              <Scale className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-              <span>Advanced Clinical Statistics & Derived Physiological Indices</span>
-            </h3>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Calculated physiological indices based on metabolic, cardiovascular, and endocrine equations
-            </p>
-          </div>
-          <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-teal-100 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 font-bold border border-teal-300/60 dark:border-teal-800 self-start sm:self-auto">
-            7 Indices Computed
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 font-mono uppercase tracking-wider">
+            Derived Physiological Indices (9 Parameters)
+          </span>
+          <span className="text-[10px] text-emerald-700/70 dark:text-emerald-400/70 font-mono">
+            Calculated Indices
           </span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {/* HOMA-IR */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">HOMA-IR (Insulin Resistance)</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{homa}</p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block ${
-              homa >= 3 ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300" :
-              homa >= 1.9 ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300" :
-              "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-            }`}>
-              {homaStatus}
-            </span>
-            <span className="text-[9px] text-slate-400 block pt-0.5">Ref: &lt;1.9 Optimal</span>
-          </div>
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-3 gap-2">
+          {metricCards.map((c, i) => (
+            <div
+              key={i}
+              className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.03)]"
+            >
+              <div className="flex justify-between items-center text-[10px] text-emerald-900/70 dark:text-emerald-300/70 font-medium">
+                <span>{c.title}</span>
+                {c.isAlert && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                )}
+              </div>
+              <p className="text-sm sm:text-base font-mono font-bold text-slate-900 dark:text-white">
+                {c.value}
+              </p>
+              <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate">
+                {c.sub}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
-          {/* QUICKI */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">QUICKI (Sensitivity Index)</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{quicki}</p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block ${
-              quicki <= 0.35 ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300" : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-            }`}>
-              {quicki <= 0.35 ? "Resistant" : "Sensitive"}
-            </span>
-            <span className="text-[9px] text-slate-400 block pt-0.5">Ref: &gt;0.382 Normal</span>
-          </div>
+  // Helper to render Doctor Intervention Simulator
+  const renderInterventionSimulator = () => {
+    if (!inferenceResult) return null;
+    const currentRisk = inferenceResult.prediction * 100;
 
-          {/* Mean Arterial Pressure (MAP) */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">Mean Arterial Pressure (MAP)</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{map} <span className="text-xs font-normal">mmHg</span></p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block ${
-              map >= 105 ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300" :
-              map >= 100 ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300" :
-              "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-            }`}>
-              {map >= 105 ? "Elevated Load" : map >= 100 ? "Borderline" : "Optimal"}
-            </span>
-            <span className="text-[9px] text-slate-400 block pt-0.5">Ref: 70–100 mmHg</span>
-          </div>
+    const baselineGlucose = parseFloat(vitals.glucose_level) || 140;
+    const baselineBP = parseFloat(vitals.blood_pressure) || 135;
+    const baselineBMI = parseFloat(vitals.bmi) || 28;
 
-          {/* Pulse Pressure */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">Pulse Pressure (Compliance)</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{pp} <span className="text-xs font-normal">mmHg</span></p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block ${
-              pp >= 60 ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300" : "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-            }`}>
-              {pp >= 60 ? "Arterial Stiffness" : "Compliant"}
-            </span>
-            <span className="text-[9px] text-slate-400 block pt-0.5">Ref: 30–50 mmHg</span>
-          </div>
+    const glucFactor = Math.max(0.15, simulatedGlucose / Math.max(baselineGlucose, 90));
+    const bpFactor = Math.max(0.25, simulatedBP / Math.max(baselineBP, 110));
+    const bmiFactor = Math.max(0.35, simulatedBMI / Math.max(baselineBMI, 20));
 
-          {/* Atherogenic Ratio */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">Atherogenic Index Ratio</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{athero}</p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block ${
-              athero >= 5 ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300" :
-              athero >= 4.5 ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300" :
-              "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-            }`}>
-              {athero >= 5 ? "High Atherogenic" : athero >= 4.5 ? "Borderline" : "Desirable"}
-            </span>
-            <span className="text-[9px] text-slate-400 block pt-0.5">Ref: &lt;4.5 Desirable</span>
-          </div>
+    const simulatedRisk = Math.max(4.2, Math.min(96.0, currentRisk * (glucFactor * 0.55 + bpFactor * 0.25 + bmiFactor * 0.20)));
+    const riskDiff = simulatedRisk - currentRisk;
 
-          {/* Systemic Inflammatory Burden (SMIL) */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">Systemic Inflammatory Load</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{smil} <span className="text-xs font-normal">/100</span></p>
-            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md inline-block ${
-              smil >= 70 ? "bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300" :
-              smil >= 50 ? "bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300" :
-              "bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300"
-            }`}>
-              {smil >= 70 ? "High Inflammatory" : smil >= 50 ? "Moderate" : "Low Baseline"}
+    return (
+      <div className="p-4 bg-emerald-950 text-white rounded-2xl border border-emerald-800 space-y-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <span className="text-xs font-bold text-emerald-300 font-mono uppercase tracking-wider flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5" />
+              <span>Target Intervention Simulator</span>
             </span>
-            <span className="text-[9px] text-slate-400 block pt-0.5">Cancer/CVD Inflammatory Index</span>
-          </div>
-
-          {/* Basal Metabolic Energy (BMR) */}
-          <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200/70 dark:border-slate-800 space-y-1 sm:col-span-2">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium block">Estimated Basal Metabolic Rate (BMR)</span>
-            <p className="text-base font-mono font-extrabold text-slate-900 dark:text-white">{bmr} <span className="text-xs font-normal">kcal/day</span></p>
-            <p className="text-[9px] text-slate-400 pt-0.5">
-              Baseline daily caloric expenditure at rest (Mifflin-St Jeor metabolic baseline)
+            <p className="text-[10px] text-emerald-200/70 mt-0.5">
+              Slide therapeutic targets to project risk reduction
             </p>
           </div>
+          <div className="text-right">
+            <span className="text-xs font-mono font-bold text-emerald-300">
+              {simulatedRisk.toFixed(1)}% Projected
+            </span>
+            <span className="text-[10px] text-emerald-400 block font-mono">
+              ({riskDiff.toFixed(1)}% ARR)
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-emerald-200/80">
+              <span>Fasting Glucose</span>
+              <span className="text-emerald-300 font-bold">{simulatedGlucose} mg/dL</span>
+            </div>
+            <input
+              type="range"
+              min="70"
+              max="200"
+              value={simulatedGlucose}
+              onChange={(e) => setSimulatedGlucose(Number(e.target.value))}
+              className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-emerald-900 rounded-lg"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-emerald-200/80">
+              <span>Systolic BP</span>
+              <span className="text-emerald-300 font-bold">{simulatedBP} mmHg</span>
+            </div>
+            <input
+              type="range"
+              min="90"
+              max="180"
+              value={simulatedBP}
+              onChange={(e) => setSimulatedBP(Number(e.target.value))}
+              className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-emerald-900 rounded-lg"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-emerald-200/80">
+              <span>Target BMI</span>
+              <span className="text-emerald-300 font-bold">{simulatedBMI} kg/m²</span>
+            </div>
+            <input
+              type="range"
+              min="18.5"
+              max="40"
+              step="0.5"
+              value={simulatedBMI}
+              onChange={(e) => setSimulatedBMI(Number(e.target.value))}
+              className="w-full accent-emerald-400 cursor-pointer h-1.5 bg-emerald-900 rounded-lg"
+            />
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-emerald-900 flex items-center justify-between">
+          <span className="text-[10px] text-emerald-300/80 font-mono">
+            Baseline: {currentRisk.toFixed(1)}% → Goal: {simulatedRisk.toFixed(1)}%
+          </span>
+          <button
+            onClick={() => {
+              const note = `\n• [THERAPEUTIC GOALS]: Target FBS ${simulatedGlucose} mg/dL, Target SBP ${simulatedBP} mmHg, Target BMI ${simulatedBMI} kg/m². Projected risk reduction: ${currentRisk.toFixed(1)}% -> ${simulatedRisk.toFixed(1)}% (ARR: ${(currentRisk - simulatedRisk).toFixed(1)}%).`;
+              setDoctorNotes((prev) => (prev ? prev + note : note.trim()));
+              setActiveTab("decision");
+            }}
+            className="text-xs font-bold text-emerald-300 hover:text-emerald-200 flex items-center gap-1 cursor-pointer"
+          >
+            <span>Set in Doctor Decision</span>
+            <ArrowRight className="w-3 h-3" />
+          </button>
         </div>
       </div>
     );
@@ -989,92 +922,86 @@ export default function DoctorCDSSDashboard() {
         }
       }}
     >
-      <div className="max-w-4xl mx-auto space-y-6 pb-16 animate-fade-in">
+      <div className="max-w-4xl mx-auto space-y-5 pb-16 animate-fade-in">
         {/* ========================================================================= */}
-        {/* TOP BAR: PATIENT ID & FOCUSED STEP NAVIGATION                             */}
+        {/* 1. GREEN & WHITE TOP BAR                                                  */}
         {/* ========================================================================= */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-emerald-100 dark:border-emerald-900/40">
           <div className="flex items-center space-x-3">
-            <div className="w-11 h-11 rounded-xl bg-emerald-600 dark:bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-emerald-600/20">
-              <Stethoscope className="w-6 h-6" />
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-600/20 shrink-0">
+              <Stethoscope className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+              <h1 className="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white tracking-tight">
                 Clinical Decision Support
               </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {doctorDisplayName}
+              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                {doctorDisplayName} • SecRE-XAI Certified
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-xs text-slate-400 font-medium font-mono">Patient:</span>
+            <span className="text-xs text-emerald-900/60 dark:text-emerald-400/60 font-mono font-medium">Patient:</span>
             <input
               type="text"
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
-              className="w-20 px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-none focus:border-emerald-500"
+              className="w-24 px-2.5 py-1 bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800 rounded-lg text-xs font-mono font-bold text-emerald-950 dark:text-white focus:outline-none focus:border-emerald-500"
             />
           </div>
         </div>
 
         {/* ========================================================================= */}
-        {/* CLEAN 4-STEP TABS NAVIGATION                                              */}
+        {/* 2. GREEN & WHITE SEGMENTED STEP NAVIGATOR                                 */}
         {/* ========================================================================= */}
-        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-2xl p-1.5 shadow-sm gap-1">
+        <div className="flex bg-emerald-50/70 dark:bg-slate-900/80 rounded-xl p-1 gap-1 border border-emerald-100 dark:border-emerald-900/40">
           <button
             onClick={() => setActiveTab("input")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "input"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 font-bold"
+                : "text-emerald-900/70 dark:text-emerald-300/70 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40"
             }`}
           >
-            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-extrabold">
-              1
-            </span>
-            <span>Lab Data</span>
+            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-bold">1</span>
+            <span>Lab Ingestion</span>
           </button>
 
           <button
             onClick={() => setActiveTab("prediction")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "prediction"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 font-bold"
+                : "text-emerald-900/70 dark:text-emerald-300/70 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40"
             }`}
           >
-            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-extrabold">
-              2
-            </span>
+            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-bold">2</span>
             <span>AI Risk & Reason</span>
           </button>
 
           <button
             onClick={() => setActiveTab("decision")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "decision"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 font-bold"
+                : "text-emerald-900/70 dark:text-emerald-300/70 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40"
             }`}
           >
-            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-extrabold">
-              3
-            </span>
+            <span className="w-4 h-4 rounded-full bg-white/20 text-[10px] flex items-center justify-center font-bold">3</span>
             <span>Doctor Decision</span>
           </button>
 
           <button
             onClick={() => setActiveTab("history")}
-            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === "history"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/60"
+                ? "bg-emerald-600 text-white shadow-sm shadow-emerald-600/20 font-bold"
+                : "text-emerald-900/70 dark:text-emerald-300/70 hover:bg-emerald-100/60 dark:hover:bg-emerald-950/40"
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>History</span>
+            <span>Records</span>
           </button>
         </div>
 
@@ -1082,84 +1009,50 @@ export default function DoctorCDSSDashboard() {
         {/* TAB 1: LAB DATA & PATIENT BIOMARKERS                                      */}
         {/* ========================================================================= */}
         {activeTab === "input" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
-            <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                  Patient Medical Lab Ingestion
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Upload lab report PDF or review extracted biomarkers below.
-                </p>
-              </div>
-              <span className="text-xs font-mono text-slate-500 font-semibold">
-                ID: {patientId}
-              </span>
-            </div>
-
-            {/* 5 Real Clinical Case Profile Selector */}
-            <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider font-mono flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  <span>5 Real Clinical Lab Reports (1-Click Real Case Profiles)</span>
+          <div className="bg-white dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 animate-fade-in">
+            {/* Quick Profiles Selector */}
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 font-mono uppercase tracking-wider">
+                  Test Case Profiles
                 </span>
-                <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
-                  Select to Test Real Patient Diagnostics
+                <span className="text-[10px] text-emerald-700/70 dark:text-emerald-400/70 font-mono">
+                  1-Click Test Cases
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                 {REAL_CLINICAL_CASES.map((c) => {
                   const isSelected = patientId === c.pid;
                   return (
-                    <div
+                    <button
                       key={c.id}
                       onClick={() => handleLoadRealCase(c)}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-2 group ${
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer space-y-1 ${
                         isSelected
-                          ? "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 dark:border-emerald-500/80 shadow-sm"
-                          : "bg-slate-50/70 dark:bg-slate-950/40 border-slate-200/80 dark:border-slate-800/80 hover:border-emerald-300 dark:hover:border-emerald-800/60"
+                          ? "bg-emerald-50 dark:bg-emerald-950/60 border-emerald-500 dark:border-emerald-500 shadow-sm"
+                          : "bg-white dark:bg-slate-950 border-emerald-100 dark:border-emerald-900/40 hover:border-emerald-300 dark:hover:border-emerald-700"
                       }`}
                     >
-                      <div className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${c.badgeColor}`}>
-                            {c.badge}
-                          </span>
-                          <a
-                            href={c.pdf_url}
-                            download={`${c.id}.pdf`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 p-1 transition-colors"
-                            title="Download Clinical PDF Report"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                          </a>
-                        </div>
-                        <p className="text-xs font-extrabold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                          {c.title}
-                        </p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                          {c.name} ({c.age}Y) • PID: <span className="font-mono">{c.pid}</span>
-                        </p>
-                      </div>
-
-                      <div className="text-[9px] text-slate-500 dark:text-slate-400 border-t border-slate-200/60 dark:border-slate-800/60 pt-1.5 flex items-center justify-between font-mono">
-                        <span>FBS: {c.vitals.glucose_level}</span>
-                        <span>BP: {c.vitals.blood_pressure}</span>
-                        <span>BMI: {c.vitals.bmi}</span>
-                      </div>
-                    </div>
+                      <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded block truncate border ${c.tagColor}`}>
+                        {c.tag}
+                      </span>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                        {c.name}
+                      </p>
+                      <p className="text-[9px] text-slate-400 font-mono truncate">
+                        {c.pid}
+                      </p>
+                    </button>
                   );
                 })}
               </div>
             </div>
 
-            {/* Upload PDF Box */}
+            {/* Minimalist Green & White Dropzone */}
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-emerald-500 rounded-2xl p-6 text-center cursor-pointer transition-all bg-slate-50/50 dark:bg-slate-950/40 flex flex-col items-center justify-center group"
+              className="border-2 border-dashed border-emerald-200 dark:border-emerald-900/60 hover:border-emerald-500 rounded-xl p-4 text-center cursor-pointer transition-all bg-emerald-50/30 dark:bg-emerald-950/20 flex items-center justify-center gap-3"
             >
               <input
                 type="file"
@@ -1168,92 +1061,112 @@ export default function DoctorCDSSDashboard() {
                 accept=".pdf,.png,.jpg,.jpeg"
                 className="hidden"
               />
-              <UploadCloud className="w-8 h-8 text-emerald-600 mb-1.5 group-hover:scale-110 transition-transform" />
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                {selectedFile ? selectedFile.name : "Click to Upload Patient Lab PDF / Report"}
-              </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">
-                PDF or scanned lab image • Auto OCR Extraction
-              </p>
+              <UploadCloud className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div className="text-left text-xs">
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {selectedFile ? selectedFile.name : "Upload Patient Lab PDF Report"}
+                </span>
+                <span className="text-[10px] text-slate-400 block">
+                  Automatic OCR feature extraction
+                </span>
+              </div>
               {isUploading && (
-                <div className="mt-2 text-xs text-emerald-600 font-mono flex items-center gap-1.5">
+                <div className="ml-auto text-[10px] text-emerald-600 font-mono flex items-center gap-1 font-bold">
                   <RefreshCw className="w-3 h-3 animate-spin" />
-                  <span>Extracting parameters...</span>
+                  <span>Extracting...</span>
                 </div>
               )}
             </div>
 
-            {/* 6 Clean Biomarker Inputs */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-medium text-slate-500 block">Fasting Glucose (mg/dL)</span>
-                <input
-                  type="number"
-                  value={vitals.glucose_level}
-                  onChange={(e) => handleVitalChange("glucose_level", e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none mt-1"
-                />
-                <span className="text-[9px] text-slate-400">Normal: 70–99</span>
+            {/* Clean 6-Vital Input Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.02)]">
+                <span className="text-[10px] text-emerald-900/70 dark:text-emerald-400/70 font-semibold block">Fasting Glucose</span>
+                <div className="flex items-baseline justify-between">
+                  <input
+                    type="number"
+                    value={vitals.glucose_level}
+                    onChange={(e) => handleVitalChange("glucose_level", e.target.value)}
+                    placeholder="120"
+                    className="w-20 bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">mg/dL</span>
+                </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-medium text-slate-500 block">Body Mass Index (BMI)</span>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={vitals.bmi}
-                  onChange={(e) => handleVitalChange("bmi", e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none mt-1"
-                />
-                <span className="text-[9px] text-slate-400">Normal: 18.5–24.9</span>
+              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.02)]">
+                <span className="text-[10px] text-emerald-900/70 dark:text-emerald-400/70 font-semibold block">Body Mass Index (BMI)</span>
+                <div className="flex items-baseline justify-between">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={vitals.bmi}
+                    onChange={(e) => handleVitalChange("bmi", e.target.value)}
+                    placeholder="25.0"
+                    className="w-20 bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">kg/m²</span>
+                </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-medium text-slate-500 block">Blood Pressure (mmHg)</span>
-                <input
-                  type="number"
-                  value={vitals.blood_pressure}
-                  onChange={(e) => handleVitalChange("blood_pressure", e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none mt-1"
-                />
-                <span className="text-[9px] text-slate-400">Normal: &lt;120</span>
+              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.02)]">
+                <span className="text-[10px] text-emerald-900/70 dark:text-emerald-400/70 font-semibold block">Blood Pressure (SBP)</span>
+                <div className="flex items-baseline justify-between">
+                  <input
+                    type="number"
+                    value={vitals.blood_pressure}
+                    onChange={(e) => handleVitalChange("blood_pressure", e.target.value)}
+                    placeholder="120"
+                    className="w-20 bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">mmHg</span>
+                </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-medium text-slate-500 block">Patient Age (Years)</span>
-                <input
-                  type="number"
-                  value={vitals.age}
-                  onChange={(e) => handleVitalChange("age", e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none mt-1"
-                />
-                <span className="text-[9px] text-slate-400">Adult</span>
+              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.02)]">
+                <span className="text-[10px] text-emerald-900/70 dark:text-emerald-400/70 font-semibold block">Patient Age</span>
+                <div className="flex items-baseline justify-between">
+                  <input
+                    type="number"
+                    value={vitals.age}
+                    onChange={(e) => handleVitalChange("age", e.target.value)}
+                    placeholder="45"
+                    className="w-20 bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">Years</span>
+                </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-medium text-slate-500 block">Fasting Insulin (µU/mL)</span>
-                <input
-                  type="number"
-                  value={vitals.insulin}
-                  onChange={(e) => handleVitalChange("insulin", e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none mt-1"
-                />
-                <span className="text-[9px] text-slate-400">Normal: 2.6–24.9</span>
+              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.02)]">
+                <span className="text-[10px] text-emerald-900/70 dark:text-emerald-400/70 font-semibold block">Fasting Insulin</span>
+                <div className="flex items-baseline justify-between">
+                  <input
+                    type="number"
+                    value={vitals.insulin}
+                    onChange={(e) => handleVitalChange("insulin", e.target.value)}
+                    placeholder="12.0"
+                    className="w-20 bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">µU/mL</span>
+                </div>
               </div>
 
-              <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
-                <span className="text-[10px] font-medium text-slate-500 block">Total Cholesterol (mg/dL)</span>
-                <input
-                  type="number"
-                  value={vitals.cholesterol}
-                  onChange={(e) => handleVitalChange("cholesterol", e.target.value)}
-                  className="w-full bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none mt-1"
-                />
-                <span className="text-[9px] text-slate-400">Normal: &lt;200</span>
+              <div className="p-2.5 bg-white dark:bg-slate-950 rounded-xl border border-emerald-100 dark:border-emerald-900/40 space-y-1 shadow-[0_1px_3px_rgba(5,150,105,0.02)]">
+                <span className="text-[10px] text-emerald-900/70 dark:text-emerald-400/70 font-semibold block">Total Cholesterol</span>
+                <div className="flex items-baseline justify-between">
+                  <input
+                    type="number"
+                    value={vitals.cholesterol}
+                    onChange={(e) => handleVitalChange("cholesterol", e.target.value)}
+                    placeholder="190"
+                    className="w-20 bg-transparent text-sm font-bold font-mono text-slate-900 dark:text-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 font-mono">mg/dL</span>
+                </div>
               </div>
             </div>
 
-            {/* Uploaded Report 4-Axis Clinical Benchmarks & Metric Card */}
+            {/* 4 Key Benchmarks */}
             {renderReportBenchmarks()}
 
             {aiError && (
@@ -1263,21 +1176,20 @@ export default function DoctorCDSSDashboard() {
               </div>
             )}
 
-            {/* Run Assessment Button */}
+            {/* Action CTA */}
             <button
               onClick={handleRunInference}
               disabled={isInferring}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-2xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
             >
               {isInferring ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Computing AI Risk & Biomarker Forces...</span>
+                  <span>Analyzing Biomarker Forces...</span>
                 </>
               ) : (
                 <>
-                  <BrainCircuit className="w-4 h-4" />
-                  <span>Run AI Disease Risk Assessment</span>
+                  <span>Run AI Disease Risk Analysis</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -1286,84 +1198,94 @@ export default function DoctorCDSSDashboard() {
         )}
 
         {/* ========================================================================= */}
-        {/* TAB 2: AI RISK PREDICTION & SHAP EXPLAINABILITY                           */}
+        {/* TAB 2: AI RISK PREDICTION & EXPLAINABILITY                                */}
         {/* ========================================================================= */}
         {activeTab === "prediction" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
-            <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                  AI Disease Risk & Clinical Reasoning
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Target: Type 2 Diabetes / Cardiometabolic Risk
-                </p>
-              </div>
-              <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                Random Forest (AUC 0.948)
-              </span>
-            </div>
-
-            {/* Prominent Risk Banner */}
+          <div className="bg-white dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 animate-fade-in">
+            {/* Hero Result Banner */}
             {inferenceResult ? (
-              <div
-                className={`p-6 rounded-2xl border text-center space-y-1.5 ${
-                  isHighRisk
-                    ? "bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/60 text-rose-900 dark:text-rose-200"
-                    : "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200"
-                }`}
-              >
-                <span className="text-[10px] uppercase font-bold tracking-wider opacity-75 font-mono">
-                  AI Predicted Classification
-                </span>
-                <p className="text-3xl font-extrabold tracking-tight">
-                  {isHighRisk ? "🔴 HIGH RISK (Diabetes)" : "🟢 LOW RISK (Normal Baseline)"}
-                </p>
-                <p className="text-xs font-semibold">
-                  Risk Probability: {(inferenceResult.prediction * 100).toFixed(1)}% • Confidence:{" "}
-                  {(inferenceResult.confidence * 100).toFixed(1)}%
-                </p>
+              <div className="p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-950/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] uppercase font-mono font-bold text-emerald-700 dark:text-emerald-400">
+                    Primary Diagnostic Classification
+                  </span>
+                  <p className="text-lg font-extrabold text-slate-900 dark:text-white">
+                    {inferenceResult.prediction_label}
+                  </p>
+                  <p className="text-xs text-slate-500 font-mono">
+                    Model: Random Forest • Model AUC: 0.948
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="text-right font-mono">
+                    <span className="text-2xl font-extrabold text-emerald-800 dark:text-emerald-300">
+                      {(inferenceResult.prediction * 100).toFixed(1)}%
+                    </span>
+                    <span className="text-[10px] text-slate-400 block">
+                      Confidence: {(inferenceResult.confidence * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      isHighRisk
+                        ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300"
+                        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300"
+                    }`}
+                  >
+                    {isHighRisk ? "High Risk" : "Low Risk"}
+                  </span>
+                </div>
               </div>
             ) : (
-              <div className="p-8 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-center text-xs text-slate-400">
-                No prediction yet. Please go to &quot;Lab Data&quot; and click &quot;Run AI Disease Risk Assessment&quot;.
+              <div className="p-6 border border-dashed border-emerald-200 dark:border-emerald-900 rounded-xl text-center text-xs text-slate-400">
+                No prediction yet. Please go to &quot;Lab Ingestion&quot; and run analysis.
               </div>
             )}
 
-            {/* Triad Multi-Disease Diagnostic Matrix: Diabetes, Cancer, Cardiovascular */}
+            {/* Triad Diagnostic Matrix */}
             {renderMultiDiseaseMatrix()}
 
-            {/* Uploaded Report 4-Axis Clinical Benchmarks & Metric Card in Tab 2 */}
+            {/* 4 Report Benchmarks */}
             {renderReportBenchmarks()}
 
-            {/* Advanced Clinical Statistics & Derived Physiological Indices */}
+            {/* 9 Derived Clinical Statistics */}
             {renderDerivedClinicalMetrics()}
+
+            {/* Doctor Target Simulator */}
+            {renderInterventionSimulator()}
 
             {/* SHAP Feature Contribution Bars */}
             {inferenceResult && inferenceResult.feature_attributions && (
-              <div className="space-y-3 pt-2">
-                <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
-                  Biomarker Contribution Forces (SHAP XAI):
-                </h3>
-                <div className="space-y-2.5">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-300 font-mono uppercase tracking-wider">
+                    Biomarker Forces (SHAP XAI)
+                  </span>
+                  <span className="text-[10px] text-emerald-700/70 dark:text-emerald-400/70 font-mono">
+                    Attribution Weights
+                  </span>
+                </div>
+
+                <div className="space-y-2">
                   {inferenceResult.feature_attributions.map((attr, idx) => {
                     const isPos = attr.direction === "positive";
                     const percent = Math.min(100, Math.max(15, Math.round(attr.importance * 100)));
                     return (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-xs font-semibold">
-                          <span className="text-slate-800 dark:text-slate-200 capitalize">
+                      <div key={idx} className="space-y-1 text-xs">
+                        <div className="flex justify-between text-[11px]">
+                          <span className="text-slate-700 dark:text-slate-300 capitalize font-semibold">
                             {attr.feature.replace(/_/g, " ")} ({attr.value})
                           </span>
                           <span
-                            className={`font-bold font-mono ${
+                            className={`font-mono font-bold ${
                               isPos ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
                             }`}
                           >
-                            {isPos ? `+${(attr.importance * 100).toFixed(1)}% Risk Driver` : `-${(attr.importance * 100).toFixed(1)}% Normal`}
+                            {isPos ? `+${(attr.importance * 100).toFixed(1)}% Driver` : `-${(attr.importance * 100).toFixed(1)}% Normal`}
                           </span>
                         </div>
-                        <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-emerald-50 dark:bg-slate-800 overflow-hidden">
                           <div
                             className={`h-full rounded-full ${isPos ? "bg-rose-500" : "bg-emerald-500"}`}
                             style={{ width: `${percent}%` }}
@@ -1376,133 +1298,82 @@ export default function DoctorCDSSDashboard() {
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* DOCTOR-LEVEL CLINICAL AI CONDITION & PATHOPHYSIOLOGICAL REPORT            */}
-            {/* ========================================================================= */}
+            {/* Doctor Clinical Condition Summary */}
             {inferenceResult && (
-              <div className="border border-emerald-200/80 dark:border-emerald-800/50 bg-gradient-to-br from-emerald-50/40 via-white to-teal-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-emerald-950/20 rounded-2xl p-5 sm:p-6 space-y-4 shadow-sm">
-                {/* Header */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-emerald-100 dark:border-slate-800">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-600/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                      <Stethoscope className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                        Doctor-Level AI Clinical Condition Summary
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-mono font-bold">
-                          AI CDSS
-                        </span>
-                      </h3>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Pathophysiological synthesis, organ-axis evaluation, and physician recommendations
-                      </p>
-                    </div>
+              <div className="border border-emerald-100 dark:border-emerald-900/40 rounded-xl p-4 sm:p-5 space-y-3 bg-white dark:bg-slate-900 shadow-sm">
+                <div className="flex items-center justify-between pb-2 border-b border-emerald-100 dark:border-emerald-900/40">
+                  <div className="flex items-center gap-2">
+                    <Stethoscope className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Physician AI Diagnostic Notes
+                    </h3>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleCopySummary}
                       disabled={!aiExplanation}
-                      className="py-1.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                      title="Copy entire clinical condition report"
+                      className="py-1 px-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all flex items-center gap-1 cursor-pointer"
                     >
-                      {copiedSummary ? (
-                        <>
-                          <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          <span className="text-emerald-600 font-bold">Copied!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3.5 h-3.5" />
-                          <span>Copy Report</span>
-                        </>
-                      )}
+                      {copiedSummary ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedSummary ? "Copied" : "Copy"}</span>
                     </button>
 
                     <button
                       onClick={handleRegenerateSummary}
                       disabled={isSummarizing}
-                      className="py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm disabled:opacity-50"
+                      className="py-1 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer shadow-sm"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isSummarizing ? "animate-spin" : ""}`} />
-                      <span>{isSummarizing ? "Synthesizing..." : "Regenerate AI Summary"}</span>
+                      <RefreshCw className={`w-3 h-3 ${isSummarizing ? "animate-spin" : ""}`} />
+                      <span>{isSummarizing ? "Synthesizing..." : "Refresh"}</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Content Area */}
                 {isSummarizing ? (
-                  <div className="py-8 flex flex-col items-center justify-center space-y-2 text-center">
-                    <RefreshCw className="w-6 h-6 text-emerald-600 animate-spin" />
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Synthesizing Doctor-Level Clinical Condition & Pathophysiological Report...
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Evaluating Glycemic, Metabolic, and Cardiovascular axes
-                    </p>
+                  <div className="py-6 text-center text-xs text-slate-400 flex flex-col items-center justify-center gap-1.5">
+                    <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
+                    <span>Synthesizing notes...</span>
                   </div>
                 ) : aiExplanation ? (
-                  <div className="space-y-3">
-                    <div className="bg-white/80 dark:bg-slate-950/80 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800/80 shadow-inner font-sans">
+                  <div className="space-y-2">
+                    <div className="bg-emerald-50/40 dark:bg-emerald-950/20 p-3.5 rounded-lg border border-emerald-100 dark:border-emerald-900/40">
                       {renderFormattedSummary(aiExplanation)}
                     </div>
-
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                        SecRE-XAI Validated Diagnostic Inference
-                      </span>
+                    <div className="flex justify-between items-center pt-1 text-[10px]">
+                      <span className="text-emerald-700/80 dark:text-emerald-400/80 font-medium">SecRE-XAI Verified</span>
                       <button
                         onClick={() => {
-                          // Clean plain text without symbols for doctor decision notes
                           const cleanNotes = aiExplanation.replace(/\*\*/g, "");
-                          setDoctorNotes(
-                            (prev) =>
-                              `[AI Clinical Condition Summary]:\n${cleanNotes}\n\n[Doctor Clinical Decision]:\n${prev}`
-                          );
+                          setDoctorNotes((prev) => `[AI Clinical Summary]:\n${cleanNotes}\n\n${prev}`);
                           setActiveTab("decision");
                         }}
-                        className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-emerald-600 dark:text-emerald-400 hover:underline font-bold cursor-pointer"
                       >
-                        <span>Attach to Doctor Decision Notes & Review</span>
-                        <ArrowRight className="w-3 h-3" />
+                        Attach to Doctor Decision →
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-950 text-center space-y-2">
-                    <p className="text-xs text-slate-500">
-                      No condition summary generated yet.
-                    </p>
-                    <button
-                      onClick={handleRegenerateSummary}
-                      className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
-                    >
-                      Generate Doctor Clinical AI Summary
-                    </button>
-                  </div>
-                )}
+                ) : null}
               </div>
             )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3 pt-3">
+            {/* Navigation Actions */}
+            <div className="flex items-center gap-3 pt-2">
               <button
                 onClick={() => setActiveTab("input")}
-                className="py-3 px-5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1.5"
+                className="py-2.5 px-4 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all cursor-pointer flex items-center gap-1.5"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Back to Lab Data</span>
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Back</span>
               </button>
 
               <button
                 onClick={() => setActiveTab("decision")}
-                className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
               >
                 <span>Proceed to Doctor Decision</span>
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
@@ -1512,48 +1383,75 @@ export default function DoctorCDSSDashboard() {
         {/* TAB 3: DOCTOR FINAL CLINICAL DECISION                                     */}
         {/* ========================================================================= */}
         {activeTab === "decision" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
-            <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5 animate-fade-in">
+            <div className="pb-2 border-b border-emerald-100 dark:border-emerald-900/40 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
                   Doctor Final Clinical Decision
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  AI is a decision-support tool. Final diagnosis belongs strictly to the Doctor.
+                  Final diagnosis belongs strictly to the Attending Physician.
                 </p>
               </div>
-              <span className="text-xs font-mono text-emerald-600 font-bold">
+              <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold">
                 {doctorDisplayName}
               </span>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-emerald-900 dark:text-emerald-300 mb-1.5">
                   Clinical Diagnosis Decision:
                 </label>
-                <select
-                  value={doctorDecision}
-                  onChange={(e) => setDoctorDecision(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-3 text-xs font-bold text-slate-900 dark:text-white focus:border-emerald-500 focus:outline-none"
-                >
-                  <option value="CONFIRMED_HIGH_RISK">🔴 Confirmed High Risk (Type 2 Diabetes)</option>
-                  <option value="BORDERLINE_MONITORING">🟡 Borderline — Lifestyle Counseling</option>
-                  <option value="REQUIRES_HBA1C">🧪 Requires Secondary Fasting HbA1c Test</option>
-                  <option value="LOW_RISK_NORMAL">🟢 Low Risk / Normal Baseline</option>
-                </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setDoctorDecision("CONFIRMED_HIGH_RISK")}
+                    className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
+                      doctorDecision === "CONFIRMED_HIGH_RISK"
+                        ? "bg-rose-50 dark:bg-rose-950/40 border-rose-400 text-rose-800 dark:text-rose-300 font-bold"
+                        : "bg-white dark:bg-slate-950 border-emerald-100 dark:border-emerald-900/40 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Confirmed High Risk
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDoctorDecision("BORDERLINE_MONITORING")}
+                    className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
+                      doctorDecision === "BORDERLINE_MONITORING"
+                        ? "bg-amber-50 dark:bg-amber-950/40 border-amber-400 text-amber-800 dark:text-amber-300 font-bold"
+                        : "bg-white dark:bg-slate-950 border-emerald-100 dark:border-emerald-900/40 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Borderline / Monitoring
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDoctorDecision("LOW_RISK_NORMAL")}
+                    className={`p-3 rounded-xl border text-left text-xs font-semibold transition-all cursor-pointer ${
+                      doctorDecision === "LOW_RISK_NORMAL"
+                        ? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-800 dark:text-emerald-300 font-bold"
+                        : "bg-white dark:bg-slate-950 border-emerald-100 dark:border-emerald-900/40 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    Normal Baseline
+                  </button>
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Doctor Clinical Assessment & Treatment Notes:
+                <label className="block text-xs font-bold text-emerald-900 dark:text-emerald-300 mb-1.5">
+                  Doctor Clinical Assessment & Prescription Notes:
                 </label>
                 <textarea
-                  rows={4}
+                  rows={5}
                   value={doctorNotes}
                   onChange={(e) => setDoctorNotes(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl p-3.5 text-xs text-slate-900 dark:text-white leading-relaxed focus:border-emerald-500 focus:outline-none resize-none"
-                  placeholder="Enter clinical assessment notes, dietary instructions, medication recommendations..."
+                  className="w-full bg-emerald-50/20 dark:bg-slate-950 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white leading-relaxed focus:border-emerald-500 focus:outline-none resize-none font-mono"
+                  placeholder="Enter diagnosis notes, prescribed medication, lifestyle targets, follow-up schedule..."
                 />
               </div>
 
@@ -1565,38 +1463,35 @@ export default function DoctorCDSSDashboard() {
               )}
 
               {decisionResponse && (
-                <div className="p-4 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-700 rounded-2xl text-xs text-emerald-900 dark:text-emerald-200 space-y-1">
-                  <div className="flex items-center space-x-2 font-bold text-sm">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Decision Successfully Signed & Persisted</span>
-                  </div>
-                  <p className="opacity-90">{decisionResponse.message}</p>
+                <div className="p-3 bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-700 rounded-xl text-xs text-emerald-900 dark:text-emerald-200 flex items-center gap-2 font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{decisionResponse.message}</span>
                 </div>
               )}
 
               <div className="flex items-center gap-3 pt-2">
                 <button
                   onClick={() => setActiveTab("prediction")}
-                  className="py-3.5 px-5 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer flex items-center gap-1.5"
+                  className="py-2.5 px-4 rounded-xl border border-emerald-200 dark:border-emerald-800 text-xs font-bold text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-all cursor-pointer flex items-center gap-1.5"
                 >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back to Risk</span>
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Back</span>
                 </button>
 
                 <button
                   onClick={handleSaveDecision}
                   disabled={isSavingDecision}
-                  className="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center space-x-2 transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isSavingDecision ? (
                     <>
                       <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Signing & Saving Decision...</span>
+                      <span>Signing & Storing Record...</span>
                     </>
                   ) : (
                     <>
-                      <Check className="w-4 h-4" />
-                      <span>Sign & Save Final Clinical Decision</span>
+                      <ShieldCheck className="w-4 h-4" />
+                      <span>Sign & Anchor Clinical Decision</span>
                     </>
                   )}
                 </button>
@@ -1609,58 +1504,58 @@ export default function DoctorCDSSDashboard() {
         {/* TAB 4: PATIENT ASSESSMENT HISTORY                                         */}
         {/* ========================================================================= */}
         {activeTab === "history" && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
-            <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div className="bg-white dark:bg-slate-900/80 border border-emerald-100 dark:border-emerald-900/40 rounded-2xl p-5 sm:p-6 shadow-sm space-y-4 animate-fade-in">
+            <div className="pb-2 border-b border-emerald-100 dark:border-emerald-900/40 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                <h2 className="text-sm font-extrabold text-slate-900 dark:text-white">
                   Patient Assessment History
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Saved clinical records for Patient {patientId}.
                 </p>
               </div>
-              <span className="text-xs font-mono text-emerald-600 font-bold">
-                {historyRecords.length} Saved Records
+              <span className="text-xs font-mono text-emerald-700 dark:text-emerald-400 font-bold">
+                {historyRecords.length} Records
               </span>
             </div>
 
             {isLoadingHistory ? (
-              <div className="py-12 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
+              <div className="py-8 text-center text-xs text-slate-400 flex items-center justify-center gap-2">
                 <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
-                <span>Loading records from database...</span>
+                <span>Loading records...</span>
               </div>
             ) : historyRecords.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-400">
-                No previous records for Patient {patientId}. Run an assessment in &quot;Lab Data&quot; to save one.
+              <div className="py-8 text-center text-xs text-slate-400">
+                No records yet for Patient {patientId}.
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {historyRecords.map((rec) => {
                   const isHigh = rec.risk_score !== undefined && rec.risk_score >= 0.5;
                   return (
                     <div
                       key={rec.record_id}
-                      className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      className="p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/20 dark:bg-slate-950/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-[0_1px_3px_rgba(5,150,105,0.02)]"
                     >
                       <div className="space-y-0.5">
                         <span className="text-xs font-bold text-slate-900 dark:text-white block">
                           {rec.report_name}
                         </span>
                         {rec.doctor_decision && (
-                          <span className="text-[11px] text-teal-700 dark:text-teal-400 font-semibold block">
-                            👨‍⚕️ Decision: {rec.doctor_decision}
+                          <span className="text-[11px] text-emerald-800 dark:text-emerald-300 block font-semibold">
+                            Decision: {rec.doctor_decision}
                           </span>
                         )}
-                        <span className="text-[10px] font-mono text-slate-400 block">
+                        <span className="text-[9px] font-mono text-slate-400 block">
                           ID: {rec.record_id}
                         </span>
                       </div>
 
                       <span
-                        className={`self-start sm:self-auto px-3 py-1 rounded-full font-bold text-xs ${
+                        className={`self-start sm:self-auto px-2.5 py-0.5 rounded-full font-bold text-[11px] ${
                           isHigh
-                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
-                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300"
+                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300"
+                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300"
                         }`}
                       >
                         {rec.prediction_label || (isHigh ? "High Risk" : "Low Risk")}

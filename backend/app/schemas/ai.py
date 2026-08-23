@@ -37,19 +37,28 @@ class DiseaseRiskAssessment(BaseModel):
     risk_percentage: str = Field(..., description="Formatted percentage string, e.g. '86.6%'")
     risk_level: str = Field(..., description="'HIGH_RISK', 'MODERATE_RISK', or 'LOW_RISK'")
     clinical_stage: str = Field(..., description="Clinical staging description")
+    icd10_code: str = Field(default="E11.9", description="ICD-10 clinical diagnostic code equivalence")
+    confidence_interval: str = Field(default="95% CI", description="Calibrated statistical confidence interval")
+    severity_tier: str = Field(default="Elevated", description="Clinical severity classification tier")
+    pathophysiological_mechanism: str = Field(default="", description="Underlying organ-system physiological mechanism")
     primary_driver: str = Field(..., description="Primary biomarker driving the disease risk")
     confirmatory_test: str = Field(..., description="Recommended confirmatory diagnostic test")
+    intervention_guideline: str = Field(default="Clinical Practice Guidelines", description="Applicable ADA/AHA/NCCN clinical guideline standard")
 
 
 class DerivedClinicalMetrics(BaseModel):
     homa_ir: float = Field(..., description="Homeostatic Model Assessment of Insulin Resistance")
     homa_ir_status: str = Field(..., description="Insulin resistance tier: Optimal, Early Resistance, Significant Resistance")
     quicki: float = Field(..., description="Quantitative Insulin Sensitivity Check Index")
+    estimated_hba1c: float = Field(default=5.6, description="Estimated HbA1c percentage derived from glycemic profile")
     mean_arterial_pressure: float = Field(..., description="Estimated Mean Arterial Pressure in mmHg")
     pulse_pressure: float = Field(..., description="Estimated Pulse Pressure in mmHg")
+    rate_pressure_product: int = Field(default=100, description="Rate Pressure Product (Myocardial Oxygen Demand Index)")
+    rate_pressure_status: str = Field(default="Optimal", description="Myocardial oxygen workload tier")
     atherogenic_ratio: float = Field(..., description="Total Cholesterol-to-HDL proxy atherogenic index")
     metabolic_inflammatory_score: float = Field(..., description="Composite 0-100 systemic metabolic inflammatory burden score")
     bmr_estimate_kcal: int = Field(..., description="Estimated Basal Metabolic Rate in kcal/day")
+    visceral_adiposity_load: str = Field(default="Healthy Adipose Balance", description="Adipose cytokine & free fatty acid flux status")
 
 
 class MedicalInferenceResponse(BaseModel):

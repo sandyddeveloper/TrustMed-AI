@@ -11,34 +11,34 @@
 
 @layer base {
   :root {
-    --background: #f8fafc;
-    --foreground: #0f172a;
+    --background: #fbfdfc;
+    --foreground: #0f291e;
     --card: #ffffff;
-    --card-foreground: #0f172a;
-    --border: #e2e8f0;
+    --card-foreground: #0f291e;
+    --border: #e6f4ea;
     --primary: #059669;
     --primary-hover: #047857;
   }
 
   .dark {
-    --background: #020617;
-    --foreground: #f8fafc;
-    --card: #0f172a;
-    --card-foreground: #f8fafc;
-    --border: #1e293b;
+    --background: #06110d;
+    --foreground: #f0fdf4;
+    --card: #0c1e17;
+    --card-foreground: #f0fdf4;
+    --border: #133327;
     --primary: #10b981;
     --primary-hover: #059669;
   }
 }
 
 html {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #fbfdfc;
+  color: #0f291e;
 }
 
 html.dark {
-  background-color: #020617;
-  color: #f8fafc;
+  background-color: #06110d;
+  color: #f0fdf4;
 }
 
 body {
@@ -50,13 +50,13 @@ body {
 
 /* Light mode specific background and card elevations */
 html:not(.dark) body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #fbfdfc;
+  color: #0f291e;
 }
 
 html.dark body {
-  background-color: #020617;
-  color: #f8fafc;
+  background-color: #06110d;
+  color: #f0fdf4;
 }
 
 /* Custom scrollbars */

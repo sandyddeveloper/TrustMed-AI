@@ -66,7 +66,7 @@ class Settings(BaseSettings):
     XAI_DEFAULT_METHOD: str = "shap"
     XAI_NUM_BACKGROUND_SAMPLES: int = 100
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-2.0-flash"
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4o-mini"
 

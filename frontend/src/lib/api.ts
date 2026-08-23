@@ -115,19 +115,28 @@ export interface DiseaseRiskAssessment {
   risk_percentage: string;
   risk_level: "HIGH_RISK" | "MODERATE_RISK" | "LOW_RISK" | string;
   clinical_stage: string;
+  icd10_code?: string;
+  confidence_interval?: string;
+  severity_tier?: string;
+  pathophysiological_mechanism?: string;
   primary_driver: string;
   confirmatory_test: string;
+  intervention_guideline?: string;
 }
 
 export interface DerivedClinicalMetrics {
   homa_ir: number;
   homa_ir_status: string;
   quicki: number;
+  estimated_hba1c?: number;
   mean_arterial_pressure: number;
   pulse_pressure: number;
+  rate_pressure_product?: number;
+  rate_pressure_status?: string;
   atherogenic_ratio: number;
   metabolic_inflammatory_score: number;
   bmr_estimate_kcal: number;
+  visceral_adiposity_load?: string;
 }
 
 export interface MedicalInferenceResponse {

@@ -159,41 +159,57 @@ class GeminiService:
         """Calls OpenAI API with zero-delay fallback if key is present."""
         if not settings.OPENAI_API_KEY:
             return None
-        try:
-            from openai import OpenAI
-            client = OpenAI(api_key=settings.OPENAI_API_KEY, max_retries=0, timeout=3.0)
-            res = client.chat.completions.create(
-                model=settings.OPENAI_MODEL or "gpt-4o-mini",
-                messages=[
-                    {"role": "system", "content": system_msg},
-                    {"role": "user", "content": prompt},
-                ],
-                temperature=0.2,
-                max_tokens=900,
-            )
-            if res and res.choices and len(res.choices) > 0:
-                text = res.choices[0].message.content
-                if text:
-                    return text.strip()
-        except Exception as e:
-            logger.warning(f"OpenAI API call note: {e}")
-        return None
+        
+        result_holder = [None]
+        def _invoke_openai():
+            try:
+                from openai import OpenAI
+                client = OpenAI(api_key=settings.OPENAI_API_KEY, max_retries=0, timeout=1.8)
+                res = client.chat.completions.create(
+                    model=settings.OPENAI_MODEL or "gpt-4o-mini",
+                    messages=[
+                        {"role": "system", "content": system_msg},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.2,
+                    max_tokens=900,
+                )
+                if res and res.choices and len(res.choices) > 0:
+                    text = res.choices[0].message.content
+                    if text:
+                        result_holder[0] = text.strip()
+            except Exception as e:
+                logger.warning(f"OpenAI API call note: {e}")
+
+        import threading
+        th = threading.Thread(target=_invoke_openai, daemon=True)
+        th.start()
+        th.join(timeout=2.0)
+        return result_holder[0]
 
     def _call_gemini(self, prompt: str) -> Optional[str]:
         """Calls Google Gemini API if client is available."""
         client = self._get_client()
         if not client:
             return None
-        try:
-            response = client.models.generate_content(
-                model=self.model_name,
-                contents=prompt,
-            )
-            if response and hasattr(response, "text") and response.text:
-                return response.text.strip()
-        except Exception as e:
-            logger.warning(f"Google Gemini API call note: {e}")
-        return None
+
+        result_holder = [None]
+        def _invoke_gemini():
+            try:
+                response = client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                )
+                if response and hasattr(response, "text") and response.text:
+                    result_holder[0] = response.text.strip()
+            except Exception as e:
+                logger.warning(f"Google Gemini API call note: {e}")
+
+        import threading
+        th = threading.Thread(target=_invoke_gemini, daemon=True)
+        th.start()
+        th.join(timeout=2.0)
+        return result_holder[0]
 
     def generate_summary(self, text_to_summarize: str) -> str:
         """

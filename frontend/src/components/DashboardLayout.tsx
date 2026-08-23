@@ -170,18 +170,18 @@ export default function DashboardLayout({
                 title={isCollapsed ? item.label : undefined}
                 className={`w-full flex items-center ${
                   isCollapsed ? "justify-center px-2" : "justify-between px-3.5"
-                } py-2.5 2xl:py-3.5 rounded-2xl text-xs 2xl:text-sm font-semibold transition-all duration-150 cursor-pointer group ${
+                } py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 cursor-pointer group ${
                   isActive
-                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/25 font-bold"
-                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/70 hover:text-slate-900 dark:hover:text-white"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 font-bold"
+                    : "text-slate-700 dark:text-slate-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:text-emerald-800 dark:hover:text-emerald-200"
                 }`}
               >
-                <div className="flex items-center space-x-3 min-w-0">
+                <div className="flex items-center space-x-2.5 min-w-0">
                   <Icon
-                    className={`w-4 h-4 2xl:w-5 2xl:h-5 shrink-0 transition-colors ${
+                    className={`w-4 h-4 shrink-0 transition-colors ${
                       isActive
                         ? "text-white"
-                        : "text-emerald-700 dark:text-emerald-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-300"
+                        : "text-emerald-600 dark:text-emerald-400 group-hover:text-emerald-700 dark:group-hover:text-emerald-300"
                     }`}
                   />
                   {!isCollapsed && (
@@ -190,10 +190,10 @@ export default function DashboardLayout({
                 </div>
                 {!isCollapsed && item.badge && (
                   <span
-                    className={`text-[9px] 2xl:text-[10px] px-2 py-0.5 rounded-full font-mono font-bold tracking-tight uppercase shrink-0 ${
+                    className={`text-[9px] px-1.5 py-0.5 rounded-full font-mono font-bold tracking-tight uppercase shrink-0 ${
                       isActive
                         ? "bg-white/20 text-white"
-                        : "bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-500/20"
+                        : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                     }`}
                   >
                     {item.badge}
@@ -283,29 +283,22 @@ export default function DashboardLayout({
       {/* ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
         {/* Topbar Header */}
-        <header className="sticky top-0 z-30 h-16 2xl:h-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-emerald-100 dark:border-slate-800/80 px-3 sm:px-6 2xl:px-8 flex items-center justify-between transition-colors shadow-sm">
-          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        <header className="sticky top-0 z-30 h-14 sm:h-16 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/70 dark:border-slate-800/80 px-4 sm:px-6 flex items-center justify-between transition-colors">
+          <div className="flex items-center space-x-2.5 min-w-0">
             {/* Mobile Hamburger Drawer Toggle */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 sm:p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden cursor-pointer touch-manipulation shrink-0"
+              className="p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden cursor-pointer touch-manipulation shrink-0"
               aria-label="Open Navigation Menu"
             >
-              <Menu className="w-5 h-5 sm:w-6 sm:h-6" />
+              <Menu className="w-5 h-5" />
             </button>
 
             {/* Title & Status */}
-            <div className="space-y-0.5 min-w-0">
-              <h2 className="text-xs sm:text-sm md:text-base 2xl:text-lg font-extrabold text-slate-900 dark:text-white truncate">
-                {t("nav.vitals", "Patient Diagnostic Workspace")}
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                {t("nav.vitals", "Clinical Decision Workspace")}
               </h2>
-              <div className="flex items-center space-x-1.5 sm:space-x-2 text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 truncate">
-                <span className="hidden xs:inline">{t("nav.brand", "TrustMed-AI")}</span>
-                <span className="hidden xs:inline">&bull;</span>
-                <span className="text-emerald-700 dark:text-emerald-400 font-semibold font-mono truncate">
-                  SecRE-XAI Certified
-                </span>
-              </div>
             </div>
           </div>
 
