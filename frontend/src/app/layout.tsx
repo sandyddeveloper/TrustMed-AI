@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import SessionExpiredModal from "@/components/SessionExpiredModal";
 import "./globals.css";
 
 const inter = Inter({
@@ -32,7 +33,10 @@ export default function RootLayout({
       <body className="min-h-screen font-sans antialiased selection:bg-emerald-500 selection:text-white dark:selection:text-slate-950">
         <ThemeProvider>
           <AuthProvider>
-            <LanguageProvider>{children}</LanguageProvider>
+            <LanguageProvider>
+              {children}
+              <SessionExpiredModal />
+            </LanguageProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

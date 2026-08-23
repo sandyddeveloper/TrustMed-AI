@@ -52,17 +52,19 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config;
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes("/auth/login") &&
-      !originalRequest.url?.includes("/auth/signup") &&
-      !originalRequest.url?.includes("/auth/refresh")
+      !originalRequest?._retry &&
+      !originalRequest?.url?.includes("/auth/login") &&
+      !originalRequest?.url?.includes("/auth/signup") &&
+      !originalRequest?.url?.includes("/auth/refresh")
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
+            if (token && originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
             return apiClient(originalRequest);
           })
           .catch((err) => Promise.reject(err));
@@ -75,14 +77,22 @@ apiClient.interceptors.response.use(
         const refreshed = await refreshAccessToken();
         if (refreshed?.access_token) {
           processQueue(null, refreshed.access_token);
-          originalRequest.headers.Authorization = `Bearer ${refreshed.access_token}`;
+          if (originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${refreshed.access_token}`;
+          }
           return apiClient(originalRequest);
         } else {
           processQueue(error, null);
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent("trustmed:session-expired"));
+          }
           return Promise.reject(error);
         }
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("trustmed:session-expired"));
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
@@ -402,16 +412,57 @@ export async function refreshAccessToken(): Promise<TokenRefreshResponse | null>
   if (!refreshToken) return null;
 
   try {
-    const { data } = await apiClient.post<TokenRefreshResponse>("/auth/refresh", {
-      refresh_token: refreshToken,
-    });
-    if (data.access_token) {
+    // Make direct unauthenticated axios request to prevent attaching expired Bearer token
+    const { data } = await axios.post<TokenRefreshResponse>(
+      `${API_BASE_URL}/auth/refresh`,
+      { refresh_token: refreshToken },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        withCredentials: true,
+        timeout: 15000,
+      }
+    );
+
+    if (data && data.access_token) {
       localStorage.setItem("trustmed_jwt_token", data.access_token);
       if (data.refresh_token) {
         localStorage.setItem("trustmed_refresh_token", data.refresh_token);
       }
+      if (data.user) {
+        const existingSession = localStorage.getItem("trustmed_practitioner_session");
+        const parsedExisting = existingSession ? JSON.parse(existingSession) : {};
+        const updatedSession = {
+          ...parsedExisting,
+          id: data.user.id,
+          address: data.user.wallet_address || parsedExisting.address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
+          role: data.user.role || parsedExisting.role || "Chief Medical Officer",
+          licenseNumber: data.user.npi_number || data.user.patient_id || parsedExisting.licenseNumber || "1487290145",
+          institution: data.user.address || parsedExisting.institution || "TrustMed Clinical Health System",
+          email: data.user.email || parsedExisting.email,
+          phone_number: data.user.phone_number || parsedExisting.phone_number,
+          patient_id: data.user.patient_id || parsedExisting.patient_id,
+          record_number: data.user.record_number || parsedExisting.record_number,
+          first_name: data.user.first_name || parsedExisting.first_name,
+          last_name: data.user.last_name || parsedExisting.last_name,
+          full_name:
+            data.user.full_name ||
+            `${data.user.first_name || ""} ${data.user.last_name || ""}`.trim() ||
+            parsedExisting.full_name,
+          age: data.user.age ?? parsedExisting.age,
+          gender: data.user.gender || parsedExisting.gender,
+          npi_number: data.user.npi_number || parsedExisting.npi_number,
+          wallet_address: data.user.wallet_address || parsedExisting.wallet_address,
+          issuedAt: new Date().toISOString(),
+        };
+        localStorage.setItem("trustmed_practitioner_session", JSON.stringify(updatedSession));
+      }
       document.cookie = `trustmed_access_token=${data.access_token}; path=/; max-age=${data.expires_in || 3600}; SameSite=Lax`;
-      document.cookie = `trustmed_refresh_token=${data.refresh_token}; path=/; max-age=1728000; SameSite=Lax`;
+      if (data.refresh_token) {
+        document.cookie = `trustmed_refresh_token=${data.refresh_token}; path=/; max-age=1728000; SameSite=Lax`;
+      }
       return data;
     }
     return null;
@@ -419,6 +470,8 @@ export async function refreshAccessToken(): Promise<TokenRefreshResponse | null>
     localStorage.removeItem("trustmed_jwt_token");
     localStorage.removeItem("trustmed_refresh_token");
     localStorage.removeItem("trustmed_practitioner_session");
+    document.cookie = "trustmed_access_token=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "trustmed_refresh_token=; path=/; max-age=0; SameSite=Lax";
     return null;
   }
 }

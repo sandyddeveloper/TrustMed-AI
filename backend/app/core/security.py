@@ -73,7 +73,14 @@ def create_refresh_token(
 def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
     """Decode and validate a JWT access token."""
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        if not token:
+            return None
+        cleaned_token = str(token).strip()
+        if cleaned_token.lower().startswith("bearer "):
+            cleaned_token = cleaned_token[7:].strip()
+        if cleaned_token.startswith('"') and cleaned_token.endswith('"'):
+            cleaned_token = cleaned_token[1:-1].strip()
+        payload = jwt.decode(cleaned_token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         return payload
     except JWTError:
         return None
@@ -82,7 +89,14 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
 def decode_refresh_token(token: str) -> Optional[Dict[str, Any]]:
     """Decode and validate a JWT refresh token."""
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])
+        if not token:
+            return None
+        cleaned_token = str(token).strip()
+        if cleaned_token.lower().startswith("bearer "):
+            cleaned_token = cleaned_token[7:].strip()
+        if cleaned_token.startswith('"') and cleaned_token.endswith('"'):
+            cleaned_token = cleaned_token[1:-1].strip()
+        payload = jwt.decode(cleaned_token, settings.SECRET_KEY, algorithms=[ALGORITHM])
         if payload.get("token_type") != "refresh":
             return None
         return payload
