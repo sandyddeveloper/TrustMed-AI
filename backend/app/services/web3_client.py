@@ -32,7 +32,8 @@ class Web3Client:
             return
 
         try:
-            provider = Web3.HTTPProvider(settings.WEB3_PROVIDER_URI, request_kwargs={"timeout": 10})
+            # Fast 2-second timeout to prevent blocking application threads
+            provider = Web3.HTTPProvider(settings.WEB3_PROVIDER_URI, request_kwargs={"timeout": 2})
             self.w3 = Web3(provider)
 
             # Inject POA middleware for testnets/sidechains like Sepolia/Polygon
@@ -41,17 +42,24 @@ class Web3Client:
             except Exception:
                 pass
 
-            if self.w3.is_connected():
-                logger.info(f"Web3 connected to {settings.WEB3_PROVIDER_URI} (Chain ID: {self.w3.eth.chain_id})")
+            self._connected = False
+            try:
+                self._connected = bool(self.w3.is_connected())
+            except Exception:
+                self._connected = False
+
+            if self._connected:
+                logger.info(f"Web3 connected to {settings.WEB3_PROVIDER_URI}")
             else:
                 logger.info(f"Web3 provider configured at {settings.WEB3_PROVIDER_URI} (Offline fallback mode enabled).")
         except Exception as e:
             logger.warning(f"Web3 client initialization note: {e}")
             self.w3 = None
+            self._connected = False
 
     def get_status(self) -> Dict[str, Any]:
         """Returns the current connection status and network metadata."""
-        if self.w3 is not None and self.w3.is_connected():
+        if getattr(self, "_connected", False) and self.w3 is not None:
             try:
                 latest_block = self.w3.eth.block_number
                 chain_id = self.w3.eth.chain_id
@@ -63,7 +71,7 @@ class Web3Client:
                     "provider_uri": settings.WEB3_PROVIDER_URI,
                 }
             except Exception as e:
-                logger.error(f"Error fetching Web3 block info: {e}")
+                logger.warning(f"Note on Web3 block query: {e}")
 
         return {
             "is_connected": False,

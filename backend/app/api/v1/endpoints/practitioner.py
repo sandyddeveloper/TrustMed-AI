@@ -22,9 +22,9 @@ router = APIRouter()
 _default_profile = PractitionerProfile()
 
 
-def _build_profile_from_user(user: User) -> PractitionerProfile:
-    """Builds a dynamic PractitionerProfile from the database User model."""
-    name = user.full_name or f"{user.first_name} {user.last_name}".strip()
+def _build_profile_from_user(user: User, db: Optional[Session] = None) -> PractitionerProfile:
+    """Builds a dynamic PractitionerProfile from the database User model with live DB metrics."""
+    name = user.full_name or f"{user.first_name or ''} {user.last_name or ''}".strip()
     if not name:
         name = user.email.split("@")[0].replace(".", " ").title()
 
@@ -36,23 +36,37 @@ def _build_profile_from_user(user: User) -> PractitionerProfile:
         display_name = name
 
     prac_id = user.patient_id or f"PRAC-{user.id:04d}-MD"
-    license_no = f"MD-LIC-{user.record_number.replace('REC-', '')}" if user.record_number else "MD-CA-9847291"
-    npi_no = user.npi_number or "1849204912"
-    wallet_addr = user.wallet_address or "0x71C8401d2f9a941C618b7606e902123985Fda6f1"
-    institution = user.address or "TrustMed Academic Medical Center"
+    license_no = f"MD-LIC-{user.record_number.replace('REC-', '')}" if user.record_number else (user.npi_number or "1487290145")
+    npi_no = user.npi_number or "1487290145"
+    wallet_addr = user.wallet_address or getattr(settings, "WEB3_CONTRACT_ADDRESS", "") or "0x71C8401d2f9a941C618b7606e902123985Fda6f1"
+    institution = user.address or "TrustMed Clinical Decision Support Center"
+
+    # Compute live signed diagnoses and security rate from database
+    signed_count = 0
+    mean_sr = 0.98
+    if db:
+        try:
+            from backend.app.models.user import PatientAssessmentRecord
+            from sqlalchemy import func
+            signed_count = db.query(PatientAssessmentRecord).filter(PatientAssessmentRecord.doctor_decision.isnot(None)).count()
+            avg_sr = db.query(func.avg(PatientAssessmentRecord.security_rate)).scalar()
+            if avg_sr:
+                mean_sr = round(float(avg_sr), 3)
+        except Exception as e:
+            logger.warning(f"Could not compute live practitioner metrics: {e}")
 
     return PractitionerProfile(
         practitioner_id=prac_id,
         name=display_name,
         email=user.email,
-        specialty="Cardiovascular Medicine & Clinical Health",
+        specialty="Endocrinology & Clinical Decision Support (CDSS)",
         institution=institution,
         npi_number=npi_no,
         license_number=license_no,
         wallet_address=wallet_addr,
         role=user.role or "Chief Medical Officer",
-        total_signed_diagnoses=142,
-        mean_security_rate=0.96,
+        total_signed_diagnoses=signed_count,
+        mean_security_rate=mean_sr,
         secre_certified=True,
     )
 
@@ -65,13 +79,18 @@ def _build_profile_from_user(user: User) -> PractitionerProfile:
 )
 def get_practitioner_profile(
     current_user: Optional[User] = Depends(get_current_user_optional),
+    db: Session = Depends(get_db),
 ):
     """
     Returns the authenticated user's verifiable credentials, NPI, and clinical identity.
     If authenticated, binds dynamically to the logged-in user; otherwise returns the default profile.
     """
     if current_user:
-        return _build_profile_from_user(current_user)
+        return _build_profile_from_user(current_user, db)
+    # If no session, find first admin/clinician in db
+    admin_user = db.query(User).filter(User.role.in_(["Admin", "Chief Medical Officer", "Clinician"])).first()
+    if admin_user:
+        return _build_profile_from_user(admin_user, db)
     return _default_profile
 
 

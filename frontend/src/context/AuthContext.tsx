@@ -13,10 +13,11 @@ import { connectWallet, getWeb3Provider } from "@/lib/web3";
 
 export type PractitionerRole =
   | "Chief Medical Officer"
-  | "Clinical Radiologist"
+  | "Endocrinologist"
   | "Cardiologist"
-  | "AI Safety Auditor"
-  | "Patient";
+  | "Attending Physician"
+  | "Clinical Radiologist"
+  | "Clinical AI Auditor";
 
 export interface PractitionerUser {
   id?: number;
@@ -95,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             id: res.id,
             address: res.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
             role: res.role as PractitionerRole,
-            licenseNumber: res.npi_number || res.patient_id || "MD-9824-BOS",
+            licenseNumber: res.npi_number || res.patient_id || "1487290145",
             institution: res.address || "TrustMed Health System",
             email: res.email,
             phone_number: res.phone_number,
@@ -113,8 +114,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(updatedUser);
           localStorage.setItem("trustmed_practitioner_session", JSON.stringify(updatedUser));
         })
-        .catch(() => {
-          // Token expired or server unreachable
+        .catch(async () => {
+          // If access token is expired, attempt auto-refresh using the 20-day refresh token
+          try {
+            const { refreshAccessToken } = await import("@/lib/api");
+            const ref = await refreshAccessToken();
+            if (ref && ref.user) {
+              const u = ref.user;
+              const refreshedUser: PractitionerUser = {
+                id: u.id,
+                address: u.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
+                role: u.role as PractitionerRole,
+                licenseNumber: u.npi_number || u.patient_id || "1487290145",
+                institution: u.address || "TrustMed Health System",
+                email: u.email,
+                phone_number: u.phone_number,
+                patient_id: u.patient_id,
+                record_number: u.record_number,
+                first_name: u.first_name,
+                last_name: u.last_name,
+                full_name: u.full_name || `${u.first_name || ""} ${u.last_name || ""}`.trim(),
+                age: u.age,
+                gender: u.gender,
+                npi_number: u.npi_number,
+                wallet_address: u.wallet_address,
+                issuedAt: new Date().toISOString(),
+              };
+              setUser(refreshedUser);
+              localStorage.setItem("trustmed_practitioner_session", JSON.stringify(refreshedUser));
+            }
+          } catch {
+            // Refresh token expired, session cleared
+          }
         })
         .finally(() => {
           setIsLoading(false);
@@ -124,10 +155,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const setAuthSession = (token: string, practitionerUser: PractitionerUser) => {
+  const setAuthSession = (
+    token: string,
+    practitionerUser: PractitionerUser,
+    refreshToken?: string
+  ) => {
     localStorage.setItem("trustmed_jwt_token", token);
+    if (refreshToken) {
+      localStorage.setItem("trustmed_refresh_token", refreshToken);
+      document.cookie = `trustmed_refresh_token=${refreshToken}; path=/; max-age=1728000; SameSite=Lax`;
+    }
     localStorage.setItem("trustmed_practitioner_session", JSON.stringify(practitionerUser));
-    document.cookie = `trustmed_access_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+    document.cookie = `trustmed_access_token=${token}; path=/; max-age=3600; SameSite=Lax`;
     setUser(practitionerUser);
   };
 
@@ -143,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: u.id,
         address: u.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
         role: (u.role as PractitionerRole) || "Patient",
-        licenseNumber: u.npi_number || u.patient_id || "REC-PENDING",
+        licenseNumber: u.npi_number || u.patient_id || "1487290145",
         institution: u.address || "TrustMed Clinical Health System",
         email: u.email,
         phone_number: u.phone_number,
@@ -158,7 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         wallet_address: u.wallet_address,
         issuedAt: new Date().toISOString(),
       };
-      setAuthSession(res.access_token, practitionerUser);
+      setAuthSession(res.access_token, practitionerUser, res.refresh_token);
       return practitionerUser;
     } finally {
       setIsLoading(false);
@@ -176,7 +215,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: u.id,
         address: u.wallet_address || "0x71C84010a3b08803450942475E2582775a6fA6f1",
         role: (u.role as PractitionerRole) || payload.role || "Patient",
-        licenseNumber: u.npi_number || u.patient_id || "REC-PENDING",
+        licenseNumber: u.npi_number || u.patient_id || "1487290145",
         institution: payload.address || "TrustMed Clinical Health System",
         email: u.email,
         phone_number: u.phone_number,
@@ -191,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         wallet_address: u.wallet_address,
         issuedAt: new Date().toISOString(),
       };
-      setAuthSession(res.access_token, practitionerUser);
+      setAuthSession(res.access_token, practitionerUser, res.refresh_token);
       return practitionerUser;
     } finally {
       setIsLoading(false);
@@ -255,20 +294,21 @@ Standard: IEEE Access SecRE-XAI & HIPAA Tier-1 Compliant
       const demoUser: PractitionerUser = {
         id: 1,
         address: "0x71C84010a3b08803450942475E2582775a6fA6f1",
-        role: "Patient",
-        licenseNumber: "REC-94821",
-        institution: "TrustMed Clinical Health System",
-        email: "patient.demo@trustmed.ai",
-        phone_number: "+1-555-019-2834",
-        patient_id: "PAT-2026-1042",
-        record_number: "REC-94821",
-        first_name: "Sarah",
-        last_name: "Jenkins",
-        full_name: "Sarah Jenkins",
+        role: "Chief Medical Officer",
+        licenseNumber: "NPI-1487290145",
+        institution: "TrustMed Clinical Decision Support Center",
+        email: "dr.mitchell@trustmed.ai",
+        phone_number: "9345693386",
+        patient_id: "DOC-2026-01",
+        record_number: "NPI-1487290145",
+        first_name: "Dr. Sarah",
+        last_name: "Mitchell, MD",
+        full_name: "Dr. Sarah Mitchell, MD",
+        npi_number: "1487290145",
         authSignature: "0x7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a",
         issuedAt: new Date().toISOString(),
       };
-      setAuthSession("demo-jwt-token-valid-patient", demoUser);
+      setAuthSession("demo-jwt-token-valid-doctor", demoUser);
       return demoUser;
     } finally {
       setIsLoading(false);

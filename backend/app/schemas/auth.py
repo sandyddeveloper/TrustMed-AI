@@ -51,5 +51,19 @@ class UserResponse(BaseModel):
 
 class TokenResponse(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str = "bearer"
+    expires_in: int = 3600  # 1 hour in seconds
     user: UserResponse
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
+
+class TokenRefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int = 3600  # 1 hour in seconds
+    user: Optional[UserResponse] = None

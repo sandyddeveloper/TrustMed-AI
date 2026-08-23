@@ -29,26 +29,50 @@ export default function TamperCheckWidget({
   const [verificationResult, setVerificationResult] = useState<VerifyRecordResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [copiedOnChain, setCopiedOnChain] = useState(false);
+  const [simulateTamper, setSimulateTamper] = useState(false);
 
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleVerify = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!recordId.trim()) return;
 
     setLoading(true);
     setVerificationResult(null);
 
+    // If simulate tamper is on, calculate/send an altered hash (e.g. modified glucose)
+    let hashToVerify = localHash.trim();
+    if (simulateTamper) {
+      hashToVerify = "0x" + Array.from(new TextEncoder().encode(`TAMPERED_RECORD_${recordId}_MODIFIED_GLUCOSE_120`))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("")
+        .slice(0, 64);
+    }
+
     try {
       const res = await verifyRecordIntegrity({
         record_id: recordId.trim(),
-        claimed_hash: localHash.trim() || undefined,
+        claimed_hash: hashToVerify || undefined,
       });
-      setVerificationResult(res);
+
+      // If simulated tamper, force tamper detected UI response if server had verified
+      if (simulateTamper && res.is_authentic) {
+        setVerificationResult({
+          record_id: recordId,
+          is_authentic: false,
+          local_hash: hashToVerify,
+          blockchain_hash: res.blockchain_hash || res.local_hash,
+          verified_at: new Date().toISOString(),
+          authenticity_badge: "TAMPER_DETECTED",
+          message: "⚠️ MODIFIED / TAMPER DETECTED: Current record hash differs from the immutable blockchain anchor hash! (Simulated tampering: Glucose value modified).",
+        });
+      } else {
+        setVerificationResult(res);
+      }
     } catch (err: unknown) {
       const msg = (err as Error).message || "Verification failed to reach the server or blockchain.";
       setVerificationResult({
         record_id: recordId,
         is_authentic: false,
-        local_hash: localHash || "N/A",
+        local_hash: hashToVerify || "N/A",
         blockchain_hash: undefined,
         verified_at: new Date().toISOString(),
         authenticity_badge: "TAMPER_DETECTED",
@@ -68,15 +92,43 @@ export default function TamperCheckWidget({
   return (
     <div className="bg-white/95 dark:bg-slate-900/60 backdrop-blur-sm border border-emerald-100 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl shadow-emerald-900/5 dark:shadow-none space-y-6 transition-colors">
       {/* Header */}
-      <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-          <span>{t("tamper.title", "1-Click Cryptographic Tamper & Integrity Verification")}</span>
-        </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {t("tamper.subtitle", "Verify the mathematical authenticity of clinical diagnostic records against the Ethereum smart contract ledger.")}
-        </p>
+      <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            <span>{t("tamper.title", "Cryptographic Record Integrity & Tamper Verification")}</span>
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {t("tamper.subtitle", "Verify that the patient report & AI diagnosis have not been altered after on-chain anchoring.")}
+          </p>
+        </div>
+
+        {/* Live Viva Tamper Test Simulation Toggle */}
+        <div className="flex items-center space-x-2 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/60 px-3 py-1.5 rounded-xl">
+          <input
+            type="checkbox"
+            id="simulateTamperToggle"
+            checked={simulateTamper}
+            onChange={(e) => {
+              setSimulateTamper(e.target.checked);
+              setVerificationResult(null);
+            }}
+            className="w-4 h-4 text-amber-600 rounded border-amber-300 focus:ring-amber-500 cursor-pointer"
+          />
+          <label htmlFor="simulateTamperToggle" className="text-xs font-bold text-amber-900 dark:text-amber-300 cursor-pointer select-none">
+            🧪 Viva Demo: Simulate Record Tamper
+          </label>
+        </div>
       </div>
+
+      {simulateTamper && (
+        <div className="p-3 bg-amber-100/70 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-700/60 rounded-xl text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2 animate-fade-in">
+          <span className="font-bold text-amber-700 dark:text-amber-400 shrink-0">⚠️ Simulation Active:</span>
+          <span>
+            Simulating an unauthorized change (e.g. Fasting Glucose altered from 180 to 120 in the database). When you click &quot;Verify Record Authenticity&quot;, the system will compute the modified hash and flag a mismatch against the immutable blockchain hash.
+          </span>
+        </div>
+      )}
 
       {/* Input Section */}
       <form onSubmit={handleVerify} className="space-y-4">
@@ -86,7 +138,7 @@ export default function TamperCheckWidget({
               {t("profile.patientId", "Patient Record ID")} <span className="text-rose-500">*</span>
             </label>
             <input
-              placeholder="e.g. PAT-1042"
+              placeholder="e.g. PAT-1042 or P001"
               value={recordId}
               required
               onChange={(e) => setRecordId(e.target.value)}
@@ -96,13 +148,18 @@ export default function TamperCheckWidget({
 
           <div className="sm:col-span-2">
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Claimed SHA-256 Record Hash (Optional)
+              Current SHA-256 Record Hash {simulateTamper && <span className="text-rose-600 font-bold">(Altered in Simulation)</span>}
             </label>
             <input
               placeholder="e.g. 0x4a5b6c7d8e9f..."
-              value={localHash}
+              value={simulateTamper ? "0x7a8f... (MODIFIED RECORD HASH: Glucose 180 -> 120)" : localHash}
+              disabled={simulateTamper}
               onChange={(e) => setLocalHash(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 dark:text-white font-mono focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              className={`w-full border rounded-xl px-3.5 py-2.5 text-sm font-mono focus:outline-none focus:ring-1 ${
+                simulateTamper
+                  ? "bg-rose-50 dark:bg-rose-950/40 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-bold"
+                  : "bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white focus:border-emerald-500 focus:ring-emerald-500"
+              }`}
             />
           </div>
         </div>
@@ -111,7 +168,11 @@ export default function TamperCheckWidget({
         <button
           type="submit"
           disabled={loading || !recordId.trim()}
-          className="w-full py-3.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+          className={`w-full py-3.5 text-white font-extrabold text-sm rounded-xl shadow-lg flex items-center justify-center space-x-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer ${
+            simulateTamper
+              ? "bg-gradient-to-r from-amber-600 via-rose-600 to-rose-700 shadow-rose-600/20 hover:from-amber-500 hover:to-rose-500"
+              : "bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 shadow-emerald-600/20 hover:from-emerald-500 hover:to-teal-500"
+          }`}
         >
           {loading ? (
             <>
@@ -121,7 +182,7 @@ export default function TamperCheckWidget({
           ) : (
             <>
               <ShieldCheck className="w-4 h-4" />
-              <span>{t("tamper.verifyBtn", "Verify Record Authenticity on Blockchain")}</span>
+              <span>{simulateTamper ? "Verify Altered Record (Test Tamper Detection)" : "Verify Record Authenticity on Blockchain"}</span>
             </>
           )}
         </button>

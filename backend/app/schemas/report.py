@@ -41,6 +41,9 @@ class SaveAssessmentRequest(BaseModel):
     explainability_rate: Optional[float] = 1.0
     deterministic_hash: Optional[str] = None
     ipfs_cid: Optional[str] = None
+    doctor_decision: Optional[str] = None
+    doctor_notes: Optional[str] = None
+    doctor_signed_at: Optional[str] = None
 
 
 class PatientAssessmentItem(BaseModel):
@@ -60,10 +63,34 @@ class PatientAssessmentItem(BaseModel):
     explainability_rate: float = 1.0
     deterministic_hash: Optional[str] = None
     ipfs_cid: Optional[str] = None
+    doctor_decision: Optional[str] = None
+    doctor_notes: Optional[str] = None
+    doctor_signed_at: Optional[str] = None
     created_at: Optional[str] = None
 
 
 class PatientAssessmentHistoryResponse(BaseModel):
     total_count: int
     records: List[PatientAssessmentItem]
+
+
+class DoctorDecisionRequest(BaseModel):
+    record_id: str = Field(..., description="Assessment record ID")
+    patient_id: str = Field(..., description="Patient ID")
+    doctor_decision: str = Field(..., description="Clinician diagnosis or final risk assessment")
+    doctor_notes: Optional[str] = Field(default="", description="Detailed clinical notes and treatment recommendations")
+    reanchor_blockchain: bool = Field(default=True, description="Whether to anchor the final signed clinical decision to blockchain")
+
+
+class DoctorDecisionResponse(BaseModel):
+    status: str
+    record_id: str
+    patient_id: str
+    doctor_decision: str
+    doctor_notes: str
+    doctor_signed_at: str
+    tx_hash: Optional[str] = None
+    record_hash: Optional[str] = None
+    message: str
+
 

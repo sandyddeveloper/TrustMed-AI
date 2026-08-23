@@ -43,6 +43,9 @@ class MedicalRecordAudit(Base):
     clinician_address: Mapped[str] = mapped_column(String(100), nullable=True)
     ai_prediction_summary: Mapped[str] = mapped_column(Text, nullable=True)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=True)
+    doctor_decision: Mapped[str] = mapped_column(String(100), nullable=True)
+    doctor_notes: Mapped[str] = mapped_column(Text, nullable=True)
+    doctor_signed_at: Mapped[str] = mapped_column(String(50), nullable=True)
 
 
 class PatientAssessmentRecord(Base):
@@ -73,4 +76,10 @@ class PatientAssessmentRecord(Base):
     explainability_rate: Mapped[float] = mapped_column(Float, default=1.0)
     deterministic_hash: Mapped[str] = mapped_column(String(66), nullable=True)
     ipfs_cid: Mapped[str] = mapped_column(String(100), nullable=True)
+
+    # Doctor Final Clinical Decision (Module 11 - CDSS Paradigm)
+    doctor_decision: Mapped[str] = mapped_column(String(100), nullable=True)
+    doctor_notes: Mapped[str] = mapped_column(Text, nullable=True)
+    doctor_signed_at: Mapped[str] = mapped_column(String(50), nullable=True)
+
 

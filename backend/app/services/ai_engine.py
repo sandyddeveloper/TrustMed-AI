@@ -4,7 +4,13 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Tuple, Any, Optional
-from backend.app.schemas.ai import FeatureContribution, MedicalInferenceResponse, SecREMetrics
+from backend.app.schemas.ai import (
+    FeatureContribution,
+    MedicalInferenceResponse,
+    SecREMetrics,
+    DiseaseRiskAssessment,
+    DerivedClinicalMetrics,
+)
 from backend.app.services.compliance import SecREComplianceValidator
 from backend.app.services.ipfs_service import ipfs_service
 from backend.app.core.i18n import normalize_language, get_diagnostic_label
@@ -212,6 +218,151 @@ class AIEngine:
             }
             ipfs_cid = ipfs_service.pin_json_to_ipfs(payload_for_ipfs, patient_id)
 
+        # 5. Triad Multi-Disease Risk Calculations: 1. Diabetes, 2. Cancer/Mitogenic, 3. Cardiovascular
+        glucose_val = float(sanitized_features.get("glucose_level", sanitized_features.get("glucose", 90)))
+        insulin_val = float(sanitized_features.get("insulin", 15))
+        bmi_val = float(sanitized_features.get("bmi", 24))
+        bp_val = float(sanitized_features.get("blood_pressure", 120))
+        chol_val = float(sanitized_features.get("cholesterol", 180))
+        age_val = float(sanitized_features.get("age", 45))
+
+        # Disease 1: Type 2 Diabetes Mellitus
+        diabetes_risk = float(risk_score)
+        if diabetes_risk >= 0.5:
+            diab_level = "HIGH_RISK"
+            diab_stage = "Early-Onset Type 2 Diabetes (Hyperglycemic)" if glucose_val >= 126 else "Compounded Metabolic Pre-Diabetes"
+        elif diabetes_risk >= 0.25:
+            diab_level = "MODERATE_RISK"
+            diab_stage = "Impaired Fasting Glucose (Pre-Diabetic)"
+        else:
+            diab_level = "LOW_RISK"
+            diab_stage = "Euglycemic / Preserved Pancreatic Reserve"
+
+        # Disease 2: Cancer & Cellular Mitogenic / Inflammatory Risk Index
+        # (Hyperinsulinemia drives IGF-1 receptor activation, adipokines induce chronic pro-inflammatory state, glucose fuels metabolic Warburg flux)
+        mitogenic_comp = min(insulin_val / 25.0, 2.0) * 0.35
+        adipokine_comp = min(max(bmi_val - 18.5, 0.0) / 20.0, 1.5) * 0.25
+        glycolytic_comp = min(max(glucose_val - 70, 0.0) / 130.0, 1.5) * 0.20
+        age_comp = min(max(age_val - 20, 0.0) / 60.0, 1.0) * 0.20
+        cancer_score = min(max(mitogenic_comp + adipokine_comp + glycolytic_comp + age_comp, 0.04), 0.96)
+        
+        if cancer_score >= 0.55:
+            cancer_level = "HIGH_RISK"
+            cancer_stage = "Elevated Pro-Inflammatory Neoplastic Surveillance"
+        elif cancer_score >= 0.30:
+            cancer_level = "MODERATE_RISK"
+            cancer_stage = "Moderate Chronic Cellular Proliferation Strain"
+        else:
+            cancer_level = "LOW_RISK"
+            cancer_stage = "Low Mitogenic / Basal Cellular Integrity"
+
+        # Disease 3: Cardiovascular & Coronary Artery Disease (CVD / ASCVD)
+        # (Vascular shear strain via SBP, Atherogenic dyslipidemia via total cholesterol, vascular age)
+        bp_cvd = min(max(bp_val - 100, 0.0) / 80.0, 1.5) * 0.40
+        chol_cvd = min(max(chol_val - 150, 0.0) / 150.0, 1.5) * 0.30
+        bmi_cvd = min(max(bmi_val - 18.5, 0.0) / 20.0, 1.2) * 0.15
+        age_cvd = min(max(age_val - 20, 0.0) / 60.0, 1.2) * 0.15
+        cvd_score = min(max(bp_cvd + chol_cvd + bmi_cvd + age_cvd, 0.03), 0.98)
+
+        if cvd_score >= 0.55:
+            cvd_level = "HIGH_RISK"
+            cvd_stage = "High 10-Yr ASCVD & Arterial Shear Strain"
+        elif cvd_score >= 0.30:
+            cvd_level = "MODERATE_RISK"
+            cvd_stage = "Borderline Atherogenic Vascular Workload"
+        else:
+            cvd_level = "LOW_RISK"
+            cvd_stage = "Normotensive Favorable Cardiovascular Profile"
+
+        multi_disease_risks = [
+            DiseaseRiskAssessment(
+                disease_name="Type 2 Diabetes Mellitus",
+                risk_score=round(diabetes_risk, 4),
+                risk_percentage=f"{diabetes_risk * 100:.1f}%",
+                risk_level=diab_level,
+                clinical_stage=diab_stage,
+                primary_driver=f"Fasting Glucose ({glucose_val:.1f} mg/dL)",
+                confirmatory_test="HbA1c & Standard 2-hr OGTT",
+            ),
+            DiseaseRiskAssessment(
+                disease_name="Cancer / Cellular Mitogenic Risk",
+                risk_score=round(cancer_score, 4),
+                risk_percentage=f"{cancer_score * 100:.1f}%",
+                risk_level=cancer_level,
+                clinical_stage=cancer_stage,
+                primary_driver=f"Insulin Mitogenic Burden ({insulin_val:.1f} µU/mL) & BMI ({bmi_val:.1f})",
+                confirmatory_test="hs-CRP, Pancreatic/Metabolic Biomarkers & Age Screening",
+            ),
+            DiseaseRiskAssessment(
+                disease_name="Cardiovascular Disease (CVD / ASCVD)",
+                risk_score=round(cvd_score, 4),
+                risk_percentage=f"{cvd_score * 100:.1f}%",
+                risk_level=cvd_level,
+                clinical_stage=cvd_stage,
+                primary_driver=f"Blood Pressure ({bp_val:.1f} mmHg) & Cholesterol ({chol_val:.1f} mg/dL)",
+                confirmatory_test="Fractionated Lipid Panel (LDL-C/ApoB) & 12-Lead ECG",
+            ),
+        ]
+
+        # Derived Clinical Statistics & Indices
+        homa_calc = round((glucose_val * insulin_val) / 405.0, 2) if glucose_val > 0 and insulin_val > 0 else 1.0
+        if homa_calc >= 3.0:
+            homa_tier = "Significant Insulin Resistance (>=3.0)"
+        elif homa_calc >= 1.9:
+            homa_tier = "Early Insulin Resistance (1.9–2.9)"
+        else:
+            homa_tier = "Optimal Insulin Sensitivity (<1.9)"
+
+        import math
+        try:
+            log_g = math.log10(max(glucose_val, 10))
+            log_i = math.log10(max(insulin_val, 1))
+            quicki_calc = round(1.0 / (log_g + log_i), 3)
+        except Exception:
+            quicki_calc = 0.350
+
+        # Estimated Diastolic ~ 80 mmHg baseline
+        est_diastolic = min(max(bp_val * 0.65, 60), 100)
+        map_calc = round((bp_val + 2 * est_diastolic) / 3.0, 1)
+        pp_calc = round(bp_val - est_diastolic, 1)
+        athero_calc = round(chol_val / 45.0, 2) if chol_val > 0 else 3.5
+
+        # Systemic Metabolic Inflammatory Load (0 - 100)
+        smil_score = round(min(max((bmi_val / 40.0) * 40 + (glucose_val / 200.0) * 35 + (bp_val / 180.0) * 25, 5), 98), 1)
+
+        # Basal Metabolic Rate (BMR) Mifflin-St Jeor proxy
+        bmr_calc = int(10 * (bmi_val * 2.2) + 6.25 * 170 - 5 * age_val + 5)
+
+        derived_metrics = DerivedClinicalMetrics(
+            homa_ir=homa_calc,
+            homa_ir_status=homa_tier,
+            quicki=quicki_calc,
+            mean_arterial_pressure=map_calc,
+            pulse_pressure=pp_calc,
+            atherogenic_ratio=athero_calc,
+            metabolic_inflammatory_score=smil_score,
+            bmr_estimate_kcal=bmr_calc,
+        )
+
+        # Generate Doctor-Level Clinical AI Summary
+        ai_summary_text = None
+        try:
+            from backend.app.services.gemini_service import gemini_service
+            attr_dicts = [a.model_dump() for a in attributions]
+            summary_res = gemini_service.explain_biomarkers(
+                patient_id=patient_id,
+                prediction_label=localized_label,
+                risk_score=risk_score,
+                model_type=selected_model_type,
+                xai_method=used_method,
+                attributions=attr_dicts,
+                vitals=features,
+                language=language,
+            )
+            ai_summary_text = summary_res.get("summary")
+        except Exception as expl_err:
+            logger.warning(f"Could not generate automated AI summary: {expl_err}")
+
         return MedicalInferenceResponse(
             patient_id=patient_id,
             prediction=round(risk_score, 4),
@@ -225,6 +376,9 @@ class AIEngine:
             secre_compliance=secre_metrics,
             deterministic_hash=deterministic_hash,
             ipfs_cid=ipfs_cid,
+            ai_explanation=ai_summary_text,
+            multi_disease_risks=multi_disease_risks,
+            derived_metrics=derived_metrics,
         )
 
     def _explain(

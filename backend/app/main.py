@@ -17,12 +17,38 @@ async def lifespan(app: FastAPI):
     """Lifespan event handler for application startup and shutdown."""
     logger.info(f"Starting {settings.APP_NAME} in [{settings.APP_ENV}] mode...")
     
-    # Initialize database tables on startup
+    # Initialize database tables & auto-migrate missing columns on startup
     try:
         Base.metadata.create_all(bind=engine)
-        logger.info("Database tables initialized successfully.")
+        # SQLite automatic column migration
+        if settings.DATABASE_URL.startswith("sqlite"):
+            import sqlite3
+            db_path = settings.DATABASE_URL.replace("sqlite:///", "").replace("sqlite://", "")
+            with sqlite3.connect(db_path) as conn:
+                cur = conn.cursor()
+                # Check patient_assessments
+                cur.execute("PRAGMA table_info(patient_assessments)")
+                cols = [row[1] for row in cur.fetchall()]
+                if "doctor_decision" not in cols:
+                    cur.execute("ALTER TABLE patient_assessments ADD COLUMN doctor_decision VARCHAR(100)")
+                if "doctor_notes" not in cols:
+                    cur.execute("ALTER TABLE patient_assessments ADD COLUMN doctor_notes TEXT")
+                if "doctor_signed_at" not in cols:
+                    cur.execute("ALTER TABLE patient_assessments ADD COLUMN doctor_signed_at VARCHAR(50)")
+                
+                # Check medical_record_audits
+                cur.execute("PRAGMA table_info(medical_record_audits)")
+                audit_cols = [row[1] for row in cur.fetchall()]
+                if "doctor_decision" not in audit_cols:
+                    cur.execute("ALTER TABLE medical_record_audits ADD COLUMN doctor_decision VARCHAR(100)")
+                if "doctor_notes" not in audit_cols:
+                    cur.execute("ALTER TABLE medical_record_audits ADD COLUMN doctor_notes TEXT")
+                if "doctor_signed_at" not in audit_cols:
+                    cur.execute("ALTER TABLE medical_record_audits ADD COLUMN doctor_signed_at VARCHAR(50)")
+                conn.commit()
+        logger.info("Database tables and columns initialized & verified successfully.")
     except Exception as e:
-        logger.warning(f"Database table initialization warning: {e}")
+        logger.warning(f"Database table initialization notice: {e}")
 
     # Seed or synchronize the pre-configured Admin account
     try:
@@ -78,11 +104,18 @@ def create_application() -> FastAPI:
         lifespan=lifespan,
     )
 
-    # CORS configuration with regex support for Vercel, ngrok, and all local/production origins
+    # CORS configuration with explicit origins + regex support for localhost, LAN, ngrok, and Vercel
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_origin_regex=r"https?://.*",
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:3001",
+            "http://127.0.0.1:3001",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
+        ],
+        allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1|0\.0\.0\.0|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|.*\.ngrok(-free)?\.app|.*\.vercel\.app)(:\d+)?$",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

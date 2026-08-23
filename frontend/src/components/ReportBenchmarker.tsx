@@ -146,27 +146,39 @@ export default function ReportBenchmarker({
     await processReportFile(selectedFile);
   };
 
-  const handleLoadSampleReport = async (sampleType: "high_risk_pdf" | "high_risk_png" | "healthy_pdf" | "healthy_png") => {
+  const handleLoadSampleReport = async (
+    sampleType:
+      | "case_1_pdf"
+      | "case_2_pdf"
+      | "case_3_pdf"
+      | "case_4_pdf"
+      | "case_5_pdf"
+      | "high_risk_pdf"
+      | "healthy_pdf"
+  ) => {
     try {
       setIsUploading(true);
       setErrorMessage(null);
 
-      let url = "/sample_reports/sample_clinical_report.pdf";
-      let filename = "sample_clinical_report.pdf";
-      let mime = "application/pdf";
+      let url = "/sample_reports/patient_case_1_diabetes_high_risk.pdf";
+      let filename = "patient_case_1_diabetes_high_risk.pdf";
+      const mime = "application/pdf";
 
-      if (sampleType === "high_risk_png") {
-        url = "/sample_reports/sample_clinical_report.png";
-        filename = "sample_clinical_report.png";
-        mime = "image/png";
-      } else if (sampleType === "healthy_pdf") {
-        url = "/sample_reports/sample_healthy_panel.pdf";
-        filename = "sample_healthy_panel.pdf";
-        mime = "application/pdf";
-      } else if (sampleType === "healthy_png") {
-        url = "/sample_reports/sample_healthy_panel.png";
-        filename = "sample_healthy_panel.png";
-        mime = "image/png";
+      if (sampleType === "case_2_pdf") {
+        url = "/sample_reports/patient_case_2_cancer_mitogenic_risk.pdf";
+        filename = "patient_case_2_cancer_mitogenic_risk.pdf";
+      } else if (sampleType === "case_3_pdf") {
+        url = "/sample_reports/patient_case_3_cardiovascular_cvd_risk.pdf";
+        filename = "patient_case_3_cardiovascular_cvd_risk.pdf";
+      } else if (sampleType === "case_4_pdf") {
+        url = "/sample_reports/patient_case_4_prediabetic_metabolic.pdf";
+        filename = "patient_case_4_prediabetic_metabolic.pdf";
+      } else if (sampleType === "case_5_pdf" || sampleType === "healthy_pdf") {
+        url = "/sample_reports/patient_case_5_optimal_healthy_baseline.pdf";
+        filename = "patient_case_5_optimal_healthy_baseline.pdf";
+      } else if (sampleType === "high_risk_pdf" || sampleType === "case_1_pdf") {
+        url = "/sample_reports/patient_case_1_diabetes_high_risk.pdf";
+        filename = "patient_case_1_diabetes_high_risk.pdf";
       }
 
       const res = await fetch(url);
@@ -175,11 +187,7 @@ export default function ReportBenchmarker({
       const file = new File([blob], filename, { type: mime });
 
       setSelectedFile(file);
-      if (mime.startsWith("image/")) {
-        setFilePreview(URL.createObjectURL(file));
-      } else {
-        setFilePreview(null);
-      }
+      setFilePreview(null);
 
       await processReportFile(file);
     } catch (err: unknown) {
@@ -250,23 +258,47 @@ export default function ReportBenchmarker({
           </p>
         </div>
 
-        {/* 1-Click Sample Preset Buttons */}
+        {/* 1-Click 5 Real Clinical Case Preset Buttons */}
         <div className="flex flex-wrap gap-2 self-start md:self-auto">
           <button
-            onClick={() => handleLoadSampleReport("high_risk_pdf")}
+            onClick={() => handleLoadSampleReport("case_1_pdf")}
             disabled={isUploading}
-            className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+            className="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-900/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
           >
-            <Zap className="w-3.5 h-3.5 text-rose-600" />
-            <span>{t("report.highRiskSample", "High-Risk Lab (PDF)")}</span>
+            <Zap className="w-3 h-3 text-rose-600" />
+            <span>1. Diabetes (PDF)</span>
           </button>
           <button
-            onClick={() => handleLoadSampleReport("healthy_pdf")}
+            onClick={() => handleLoadSampleReport("case_2_pdf")}
             disabled={isUploading}
-            className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-50"
+            className="px-2.5 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/30 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
           >
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>{t("report.healthySample", "Healthy Baseline (PDF)")}</span>
+            <Zap className="w-3 h-3 text-purple-600" />
+            <span>2. Cancer (PDF)</span>
+          </button>
+          <button
+            onClick={() => handleLoadSampleReport("case_3_pdf")}
+            disabled={isUploading}
+            className="px-2.5 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800/60 text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Zap className="w-3 h-3 text-red-600" />
+            <span>3. CVD Risk (PDF)</span>
+          </button>
+          <button
+            onClick={() => handleLoadSampleReport("case_4_pdf")}
+            disabled={isUploading}
+            className="px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/30 dark:hover:bg-amber-900/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <Zap className="w-3 h-3 text-amber-600" />
+            <span>4. Pre-Diabetic</span>
+          </button>
+          <button
+            onClick={() => handleLoadSampleReport("case_5_pdf")}
+            disabled={isUploading}
+            className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-bold flex items-center space-x-1 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            <span>5. Healthy (PDF)</span>
           </button>
         </div>
       </div>

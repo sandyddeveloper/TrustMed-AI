@@ -9,7 +9,7 @@ export const apiClient = axios.create({
     "Content-Type": "application/json",
     "ngrok-skip-browser-warning": "true",
   },
-  timeout: 15000,
+  timeout: 30000,
   withCredentials: true,
 });
 
@@ -28,6 +28,70 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
+// Auto-refresh access token on 401 Unauthorized
+let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/login") &&
+      !originalRequest.url?.includes("/auth/signup") &&
+      !originalRequest.url?.includes("/auth/refresh")
+    ) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return apiClient(originalRequest);
+          })
+          .catch((err) => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const refreshed = await refreshAccessToken();
+        if (refreshed?.access_token) {
+          processQueue(null, refreshed.access_token);
+          originalRequest.headers.Authorization = `Bearer ${refreshed.access_token}`;
+          return apiClient(originalRequest);
+        } else {
+          processQueue(error, null);
+          return Promise.reject(error);
+        }
+      } catch (refreshErr) {
+        processQueue(refreshErr, null);
+        return Promise.reject(refreshErr);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface FeatureContribution {
   feature: string;
   value: number;
@@ -45,6 +109,27 @@ export interface SecREMetrics {
   standard: string;
 }
 
+export interface DiseaseRiskAssessment {
+  disease_name: string;
+  risk_score: number;
+  risk_percentage: string;
+  risk_level: "HIGH_RISK" | "MODERATE_RISK" | "LOW_RISK" | string;
+  clinical_stage: string;
+  primary_driver: string;
+  confirmatory_test: string;
+}
+
+export interface DerivedClinicalMetrics {
+  homa_ir: number;
+  homa_ir_status: string;
+  quicki: number;
+  mean_arterial_pressure: number;
+  pulse_pressure: number;
+  atherogenic_ratio: number;
+  metabolic_inflammatory_score: number;
+  bmr_estimate_kcal: number;
+}
+
 export interface MedicalInferenceResponse {
   patient_id: string;
   prediction: number;
@@ -58,6 +143,9 @@ export interface MedicalInferenceResponse {
   secre_compliance: SecREMetrics;
   deterministic_hash?: string;
   ipfs_cid?: string;
+  ai_explanation?: string;
+  multi_disease_risks?: DiseaseRiskAssessment[];
+  derived_metrics?: DerivedClinicalMetrics;
 }
 
 export interface MedicalInferenceRequest {
@@ -175,8 +263,18 @@ export interface UserResponse {
 
 export interface TokenResponse {
   access_token: string;
+  refresh_token: string;
   token_type: string;
+  expires_in: number;
   user: UserResponse;
+}
+
+export interface TokenRefreshResponse {
+  access_token: string;
+  refresh_token: string;
+  token_type: string;
+  expires_in: number;
+  user?: UserResponse;
 }
 
 export interface PractitionerProfile {
@@ -275,8 +373,45 @@ export async function loginUser(payload: UserLoginRequest): Promise<TokenRespons
 }
 
 export async function logoutUser(): Promise<{ message: string }> {
-  const { data } = await apiClient.post("/auth/logout");
-  return data;
+  try {
+    const { data } = await apiClient.post("/auth/logout");
+    return data;
+  } finally {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("trustmed_jwt_token");
+      localStorage.removeItem("trustmed_refresh_token");
+      localStorage.removeItem("trustmed_practitioner_session");
+      document.cookie = "trustmed_access_token=; path=/; max-age=0; SameSite=Lax";
+      document.cookie = "trustmed_refresh_token=; path=/; max-age=0; SameSite=Lax";
+    }
+  }
+}
+
+export async function refreshAccessToken(): Promise<TokenRefreshResponse | null> {
+  if (typeof window === "undefined") return null;
+  const refreshToken = localStorage.getItem("trustmed_refresh_token");
+  if (!refreshToken) return null;
+
+  try {
+    const { data } = await apiClient.post<TokenRefreshResponse>("/auth/refresh", {
+      refresh_token: refreshToken,
+    });
+    if (data.access_token) {
+      localStorage.setItem("trustmed_jwt_token", data.access_token);
+      if (data.refresh_token) {
+        localStorage.setItem("trustmed_refresh_token", data.refresh_token);
+      }
+      document.cookie = `trustmed_access_token=${data.access_token}; path=/; max-age=${data.expires_in || 3600}; SameSite=Lax`;
+      document.cookie = `trustmed_refresh_token=${data.refresh_token}; path=/; max-age=1728000; SameSite=Lax`;
+      return data;
+    }
+    return null;
+  } catch (err) {
+    localStorage.removeItem("trustmed_jwt_token");
+    localStorage.removeItem("trustmed_refresh_token");
+    localStorage.removeItem("trustmed_practitioner_session");
+    return null;
+  }
 }
 
 export async function fetchCurrentUser(): Promise<UserResponse> {
@@ -364,7 +499,37 @@ export interface PatientAssessmentItem {
   explainability_rate: number;
   deterministic_hash?: string;
   ipfs_cid?: string;
+  doctor_decision?: string;
+  doctor_notes?: string;
+  doctor_signed_at?: string;
   created_at?: string;
+}
+
+export interface DoctorDecisionRequest {
+  record_id: string;
+  patient_id: string;
+  doctor_decision: string;
+  doctor_notes?: string;
+  reanchor_blockchain?: boolean;
+}
+
+export interface DoctorDecisionResponse {
+  status: string;
+  record_id: string;
+  patient_id: string;
+  doctor_decision: string;
+  doctor_notes: string;
+  doctor_signed_at: string;
+  tx_hash?: string;
+  record_hash?: string;
+  message: string;
+}
+
+export async function saveDoctorDecision(
+  payload: DoctorDecisionRequest
+): Promise<DoctorDecisionResponse> {
+  const { data } = await apiClient.post("/reports/doctor-decision", payload);
+  return data;
 }
 
 export interface PatientAssessmentHistoryResponse {

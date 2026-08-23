@@ -41,22 +41,22 @@ def parse_medical_report_text(raw_text: str) -> Tuple[Dict[str, float], Dict[str
     text_lower = raw_text.lower()
 
     # 1. Patient ID / MRN Detection
-    pid_match = re.search(r"(?:patient\s*identifier|patient\s*id|mrn|record\s*no|uhid|reg\s*no|patient\s*record|pid)\s*(?:\([^\)]+\))?\s*[:#=\-]?\s*([A-Za-z0-9\-]{4,25})", text_lower)
+    pid_match = re.search(r"(?:patient\s*identifier\s*(?:\([^\)]+\))?|patient\s*id|mrn|record\s*no|uhid|reg\s*no|pid)\s*[:#=\-]?\s*([A-Za-z0-9\-]{4,25})", raw_text, re.IGNORECASE)
     if pid_match:
-        detected_patient_id = pid_match.group(1).upper()
+        detected_patient_id = pid_match.group(1).upper().strip()
 
     # 2. Patient Name Detection
-    name_match = re.search(r"(?:patient\s*full\s*name|patient\s*name|patient)\s*[:#=\-]?\s*([A-Za-z\s\.]{3,35})", raw_text, re.IGNORECASE)
+    name_match = re.search(r"(?:patient\s*full\s*name|patient\s*name)\s*[:#=\-]?\s*([A-Za-z\s\.]{3,35})", raw_text, re.IGNORECASE)
     if name_match:
         cand = name_match.group(1).strip()
-        if len(cand) > 2 and not any(k in cand.lower() for k in ["report", "date", "age", "male", "female", "id", "identifier"]):
+        if len(cand) > 2 and not any(k in cand.lower() for k in ["report", "date", "age", "male", "female", "id", "identifier", "section"]):
             detected_patient_name = cand
 
     # 3. Patient Age Detection
-    age_match = re.search(r"(?:patient\s*age|age)\s*(?:\([^\)]+\))?\s*[:#=\-]?\s*(\d{1,3})", text_lower)
+    age_match = re.search(r"(?:patient\s*age(?:\s*[\/\&]\s*biological\s*sex)?|patient\s*age|age)\s*(?:\([^\)]+\))?\s*[:#=\-]?\s*(\d{1,3})\s*(?:y|years|yrs)?", text_lower)
     if age_match:
         val = float(age_match.group(1))
-        if 1 <= val <= 120:
+        if 10 <= val <= 120:
             vitals["age"] = val
             confidence["age"] = 0.99
 

@@ -63,27 +63,27 @@ export default function LandingPage() {
         {/* Compliance Pill */}
         <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/20 text-xs 2xl:text-sm font-semibold shadow-sm animate-fade-in">
           <Sparkles className="w-4 h-4 2xl:w-5 2xl:h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-          <span>{t("landing.badge", "SecRE-XAI Certified & Ethereum Anchored")}</span>
+          <span>Blockchain-Anchored Explainable AI Clinical Decision Support</span>
         </div>
 
         {/* Hero Title & Subtitle */}
         <div className="space-y-4 2xl:space-y-6 max-w-4xl 2xl:max-w-6xl mx-auto">
           <h1 className="text-4xl sm:text-6xl 2xl:text-7xl 3xl:text-8xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.12]">
-            {t("landing.heroTitle", "Verifiable Explainable AI for Clinical Risk Intelligence")}
+            Blockchain-Enabled Explainable AI for Specific Disease Risk Prediction
           </h1>
           <p className="text-base sm:text-lg 2xl:text-2xl text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl 2xl:max-w-4xl mx-auto">
-            {t("landing.heroSubtitle", "Dual-ensemble machine learning with local SHAP & LIME biomarker attributions, optical document lab report ingestion, and tamper-proof blockchain audit trails.")}
+            A clinician-first Clinical Decision Support System: Soft-copy medical report ingestion, Random Forest risk modeling, SHAP biomarker explainability, cryptographic SHA-256 integrity verification, and doctor-signed clinical decision workflows.
           </p>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2 2xl:pt-6">
           <Link
-            href="/auth"
+            href="/dashboard"
             className="w-full sm:w-auto px-8 2xl:px-12 py-4 2xl:py-5 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm 2xl:text-lg rounded-2xl shadow-xl shadow-emerald-600/25 flex items-center justify-center space-x-2.5 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
-            <LogIn className="w-5 h-5" />
-            <span>{t("landing.getStarted", "Launch Clinical Portal")}</span>
+            <Stethoscope className="w-5 h-5" />
+            <span>Launch Doctor CDSS Portal</span>
             <ArrowRight className="w-5 h-5" />
           </Link>
 
@@ -92,34 +92,34 @@ export default function LandingPage() {
             className="w-full sm:w-auto px-7 2xl:px-10 py-4 2xl:py-5 bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-800 font-bold text-sm 2xl:text-lg rounded-2xl shadow-sm flex items-center justify-center space-x-2 transition-all"
           >
             <BrainCircuit className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-            <span>Explore SecRE-XAI Framework</span>
+            <span>Explore 4-Pillar CDSS Architecture</span>
           </a>
         </div>
 
         {/* Live Performance & Security Stats Ticker */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-5xl 2xl:max-w-6xl mx-auto pt-8">
           <div className="p-4 2xl:p-6 bg-white dark:bg-slate-900/70 border border-emerald-100 dark:border-slate-800 rounded-2xl shadow-sm text-center space-y-1">
-            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">ROC-AUC Score</span>
-            <p className="text-2xl 2xl:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">0.948</p>
-            <span className="text-[10px] 2xl:text-xs text-slate-500">Dual-Ensemble Calibrated</span>
+            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">AI Model</span>
+            <p className="text-2xl 2xl:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">Random Forest</p>
+            <span className="text-[10px] 2xl:text-xs text-slate-500">ROC-AUC: 0.948</span>
           </div>
 
           <div className="p-4 2xl:p-6 bg-white dark:bg-slate-900/70 border border-emerald-100 dark:border-slate-800 rounded-2xl shadow-sm text-center space-y-1">
-            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">Security Rate ($SR$)</span>
-            <p className="text-2xl 2xl:text-3xl font-extrabold text-teal-600 dark:text-teal-400">97.4%</p>
-            <span className="text-[10px] 2xl:text-xs text-slate-500">Physiological Invariants</span>
+            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">Explainable AI</span>
+            <p className="text-2xl 2xl:text-3xl font-extrabold text-teal-600 dark:text-teal-400">SHAP / LIME</p>
+            <span className="text-[10px] 2xl:text-xs text-slate-500">Feature Attributions</span>
           </div>
 
           <div className="p-4 2xl:p-6 bg-white dark:bg-slate-900/70 border border-emerald-100 dark:border-slate-800 rounded-2xl shadow-sm text-center space-y-1">
-            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">Benchmark Accuracy</span>
-            <p className="text-2xl 2xl:text-3xl font-extrabold text-cyan-600 dark:text-cyan-400">100%</p>
-            <span className="text-[10px] 2xl:text-xs text-slate-500">ADA / AHA / WHO / NCEP</span>
+            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">Blockchain Integrity</span>
+            <p className="text-2xl 2xl:text-3xl font-extrabold text-cyan-600 dark:text-cyan-400">SHA-256</p>
+            <span className="text-[10px] 2xl:text-xs text-slate-500">Smart Contract Ledger</span>
           </div>
 
           <div className="p-4 2xl:p-6 bg-white dark:bg-slate-900/70 border border-emerald-100 dark:border-slate-800 rounded-2xl shadow-sm text-center space-y-1">
-            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">On-Chain Ledger</span>
-            <p className="text-2xl 2xl:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">EVM Live</p>
-            <span className="text-[10px] 2xl:text-xs text-slate-500">Ethereum Sepolia & IPFS</span>
+            <span className="text-[11px] 2xl:text-xs uppercase font-bold text-slate-400 font-mono">Decision Paradigm</span>
+            <p className="text-2xl 2xl:text-3xl font-extrabold text-indigo-600 dark:text-indigo-400">Doctor-Led</p>
+            <span className="text-[10px] 2xl:text-xs text-slate-500">Clinical Support (CDSS)</span>
           </div>
         </div>
       </section>

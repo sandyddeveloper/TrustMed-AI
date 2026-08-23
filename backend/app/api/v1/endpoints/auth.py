@@ -1,6 +1,7 @@
 import random
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.orm import Session
 from backend.app.db.session import get_db
 from backend.app.models.user import User
@@ -9,11 +10,15 @@ from backend.app.schemas.auth import (
     UserLoginRequest,
     UserResponse,
     TokenResponse,
+    RefreshTokenRequest,
+    TokenRefreshResponse,
 )
 from backend.app.core.security import (
     get_password_hash,
     verify_password,
     create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
     get_current_user,
 )
 from backend.app.core.config import settings
@@ -113,7 +118,7 @@ def signup_user(
         f"New user registered: {new_user.email} (Patient ID: {new_user.patient_id}, Record No: {new_user.record_number})"
     )
 
-    # 5. Generate JWT access token
+    # 5. Generate JWT access (1 hr) & refresh (20 days) tokens
     access_token = create_access_token(
         subject=str(new_user.id),
         extra_claims={
@@ -124,8 +129,9 @@ def signup_user(
             "record_number": new_user.record_number,
         },
     )
+    refresh_token = create_refresh_token(subject=str(new_user.id))
 
-    # 6. Set secure cookie
+    # 6. Set secure cookies
     response.set_cookie(
         key="trustmed_access_token",
         value=access_token,
@@ -134,10 +140,20 @@ def signup_user(
         secure=not settings.DEBUG,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+    response.set_cookie(
+        key="trustmed_refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+    )
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=UserResponse.model_validate(new_user),
     )
 
@@ -156,7 +172,7 @@ def login_user(
     """
     Authenticates a user via phone_number (or email) and password.
     - Verifies password hash against database credentials.
-    - Returns Bearer JWT session token and sets HttpOnly cookie.
+    - Returns Bearer JWT access token (1 hr) and refresh token (20 days) and sets HttpOnly cookies.
     """
     identifier = payload.phone_number.strip()
     
@@ -192,7 +208,7 @@ def login_user(
         db.commit()
         db.refresh(user)
 
-    # Generate JWT access token
+    # Generate JWT access (1 hr) & refresh (20 days) tokens
     access_token = create_access_token(
         subject=str(user.id),
         extra_claims={
@@ -203,8 +219,9 @@ def login_user(
             "record_number": user.record_number,
         },
     )
+    refresh_token = create_refresh_token(subject=str(user.id))
 
-    # Set secure HttpOnly cookie
+    # Set secure HttpOnly cookies
     response.set_cookie(
         key="trustmed_access_token",
         value=access_token,
@@ -213,12 +230,109 @@ def login_user(
         secure=not settings.DEBUG,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+    response.set_cookie(
+        key="trustmed_refresh_token",
+        value=refresh_token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+    )
 
     logger.info(f"User logged in: {user.email} (Patient ID: {user.patient_id})")
 
     return TokenResponse(
         access_token=access_token,
+        refresh_token=refresh_token,
         token_type="bearer",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        user=UserResponse.model_validate(user),
+    )
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenRefreshResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Refresh JWT Access Token using 20-day Refresh Token",
+)
+def refresh_access_token(
+    response: Response,
+    payload: Optional[RefreshTokenRequest] = None,
+    db: Session = Depends(get_db),
+    request: Request = None,
+):
+    """
+    Exchanges a valid 20-day refresh token for a fresh 1-hour access token.
+    Reads token from request body or 'trustmed_refresh_token' HttpOnly cookie.
+    """
+    token_str = None
+    if payload and payload.refresh_token:
+        token_str = payload.refresh_token.strip()
+    elif request:
+        token_str = request.cookies.get("trustmed_refresh_token")
+
+    if not token_str:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token was not provided.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    decoded = decode_refresh_token(token_str)
+    if not decoded or "sub" not in decoded:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    user_id = decoded["sub"]
+    user = db.query(User).filter(User.id == int(user_id)).first()
+    if not user or not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account inactive or not found.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Issue new 1-hour access token and updated 20-day refresh token
+    new_access_token = create_access_token(
+        subject=str(user.id),
+        extra_claims={
+            "email": user.email,
+            "role": user.role,
+            "phone_number": user.phone_number,
+            "patient_id": user.patient_id,
+            "record_number": user.record_number,
+        },
+    )
+    new_refresh_token = create_refresh_token(subject=str(user.id))
+
+    response.set_cookie(
+        key="trustmed_access_token",
+        value=new_access_token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="trustmed_refresh_token",
+        value=new_refresh_token,
+        httponly=True,
+        samesite="lax",
+        secure=not settings.DEBUG,
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600,
+    )
+
+    logger.info(f"Access token successfully refreshed for {user.email}")
+
+    return TokenRefreshResponse(
+        access_token=new_access_token,
+        refresh_token=new_refresh_token,
+        token_type="bearer",
+        expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         user=UserResponse.model_validate(user),
     )
 
@@ -231,6 +345,7 @@ def login_user(
 def logout_user(response: Response):
     """Clears authentication session cookies."""
     response.delete_cookie(key="trustmed_access_token")
+    response.delete_cookie(key="trustmed_refresh_token")
     return {"message": "Session invalidated successfully."}
 
 

@@ -75,6 +75,7 @@ def predict_and_explain(
                 explainability_rate=response.secre_compliance.explainability_rate,
                 deterministic_hash=response.deterministic_hash,
                 ipfs_cid=response.ipfs_cid,
+                ai_explanation=response.ai_explanation,
             )
             db.add(db_record)
             db.commit()

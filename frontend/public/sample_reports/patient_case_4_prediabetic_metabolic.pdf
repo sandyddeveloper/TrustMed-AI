@@ -1,0 +1,143 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 4744 >>
+stream
+BT
+/F1 8.5 Tf
+36 760 Td
+11.5 TL
+(TRUSTMED ACADEMIC HEALTH SYSTEM - CLINICAL LABORATORY MEDICINE) Tj
+T*
+(Comprehensive Multi-System Diagnostic Laboratory Report & AI Synthesis) Tj
+T*
+(Accreditation: CAP / CLIA Certified #99D2084920 - SecRE-XAI Standards Compliant) Tj
+T*
+() Tj
+T*
+(========================================================================================) Tj
+T*
+(SECTION 1: PATIENT ENCOUNTER & CLINICAL DEMOGRAPHICS) Tj
+T*
+(========================================================================================) Tj
+T*
+(Patient Identifier \(PID\) : PAT-2026-4419          Medical Record Number \(MRN\) : REC-4419) Tj
+T*
+(Patient Full Name        : Maya Lin          Patient Age / Biological Sex: 45Y / Female) Tj
+T*
+(Ordering Physician       : Dr. Marcus Sterling, MD       Accession Number            : ACC-2026-90412) Tj
+T*
+(Collection Timestamp     : 2026-08-23 08:30 AM EST       Diagnostic Center           : Boston Clinical Lab) Tj
+T*
+(Diagnostic Focus         : Impaired Fasting Glucose Regulation & Early Metabolic Strain) Tj
+T*
+() Tj
+T*
+(========================================================================================) Tj
+T*
+(SECTION 2: GLYCEMIC & PANCREATIC ENDOCRINE AXIS \(DIABETES SCREEN\)) Tj
+T*
+(========================================================================================) Tj
+T*
+(Biomarker Name                 Observed Value        Reference Range        Clinical Status) Tj
+T*
+(----------------------------------------------------------------------------------------) Tj
+T*
+(Fasting Blood Sugar \(FBS\)      116.0 mg/dL          70.0 - 99.0 mg/dL      IMPAIRED) Tj
+T*
+(Fasting Serum Insulin          19.5 uIU/mL          2.0 - 24.9 uIU/mL      OPTIMAL HOMEOSTASIS) Tj
+T*
+(HOMA-IR \(Insulin Resistance\)   5.59 Index          < 1.90 Optimal         SIGNIFICANT RESISTANCE \(>=3.0\)) Tj
+T*
+(QUICKI \(Sensitivity Index\)     0.312 Index        > 0.382 Normal         RESISTANT) Tj
+T*
+() Tj
+T*
+(========================================================================================) Tj
+T*
+(SECTION 3: CARDIOVASCULAR & HEMODYNAMIC PROFILE \(CVD / ASCVD SCREEN\)) Tj
+T*
+(========================================================================================) Tj
+T*
+(Biomarker Name                 Observed Value        Reference Range        Clinical Status) Tj
+T*
+(----------------------------------------------------------------------------------------) Tj
+T*
+(Blood Pressure \(Systolic/Dia\)  132/84 mmHg          90-119 / 60-79 mmHg    STAGE 1 HYPERTENSION) Tj
+T*
+(Mean Arterial Pressure \(MAP\)   100.0 mmHg         70.0 - 100.0 mmHg      OPTIMAL PERFUSION) Tj
+T*
+(Pulse Pressure \(Compliance\)    48.0 mmHg          30.0 - 50.0 mmHg       COMPLIANT VESSEL WALLS) Tj
+T*
+(Total Serum Cholesterol        208.0 mg/dL         < 200.0 mg/dL          BORDERLINE) Tj
+T*
+(Atherogenic Index Ratio        4.62 Ratio         < 4.50 Desirable       FAVORABLE LIPID RATIO) Tj
+T*
+() Tj
+T*
+(========================================================================================) Tj
+T*
+(SECTION 4: ONCOLOGICAL & SYSTEMIC INFLAMMATORY BIOMARKERS \(CANCER SCREEN\)) Tj
+T*
+(========================================================================================) Tj
+T*
+(Biomarker Name                 Observed Value        Reference Range        Clinical Status) Tj
+T*
+(----------------------------------------------------------------------------------------) Tj
+T*
+(Body Mass Index \(BMI\)          27.6 kg/m2          18.5 - 24.9 kg/m2      OVERWEIGHT) Tj
+T*
+(Systemic Inflammatory \(SMIL\)   66.2 / 100           < 50.0 Baseline        MODERATE STRAIN) Tj
+T*
+(Resting Heart Rate             74 bpm               60.0 - 100.0 bpm       PHYSIOLOGICAL RHYTHM) Tj
+T*
+(Mitogenic Signaling Indicator  LOW               Low Risk Baseline      STABLE CELLULAR INTEGRITY) Tj
+T*
+() Tj
+T*
+(========================================================================================) Tj
+T*
+(SECTION 5: DUAL-AI \(GEMINI + OPENAI\) CLINICAL CONSENSUS & ATTENDING DIRECTIVES) Tj
+T*
+(========================================================================================) Tj
+T*
+(- Primary Diagnostic Staging: Impaired Fasting Glucose Regulation & Early Metabolic Strain) Tj
+T*
+(- Multi-Disease Triad Evaluation: Calibrated risk vectors evaluated via Random Forest / XGBoost & SHAP.) Tj
+T*
+(- Confirmatory Diagnostic Orders: HbA1c, Fractionated Lipid Panel \(LDL-C/ApoB\), hs-CRP, and 12-Lead ECG.) Tj
+T*
+(- Cryptographic Tamper Seal: Deterministic SHA-256 Hash pinned to IPFS and anchored to Sepolia Testnet.) Tj
+T*
+() Tj
+T*
+(Digitally Certified by: Dr. Marcus Sterling, MD, FCAP \(License #MD-782910\)) Tj
+T*
+(Cryptographic Audit Hash: 0x8a92f7c19b884210e5f29d74a01c38e92f1503c8 \(TrustMedAudit.sol Verified\)) Tj
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000244 00000 n 
+0000000300 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+5094
+%%EOF

@@ -69,31 +69,25 @@ export default function DashboardLayout({
 
   const navItems = [
     {
-      id: "benchmarks",
-      label: t("nav.benchmarks", "Upload Report & Benchmarks"),
-      icon: FileText,
+      id: "input",
+      label: "Clinical Diagnosis (CDSS)",
+      icon: Stethoscope,
       route: "/dashboard",
-      badge: "PDF / Scan",
+      badge: "Active",
     },
     {
-      id: "vitals",
-      label: t("nav.vitals", "Patient Vitals & AI"),
-      icon: Activity,
+      id: "history",
+      label: "Patient Assessment History",
+      icon: Database,
       route: "/dashboard",
-      badge: "Diagnostic",
-    },
-    {
-      id: "xai",
-      label: t("nav.xai", "Biomarker Explanations"),
-      icon: BrainCircuit,
-      route: "/dashboard",
-      badge: "SHAP / LIME",
+      badge: "Records",
     },
     {
       id: "profile",
-      label: t("nav.profile", "My Patient Credentials"),
+      label: "Doctor Credentials & NPI",
       icon: UserCheck,
       route: "/profile",
+      badge: "MD",
     },
   ];
 
@@ -156,8 +150,9 @@ export default function DashboardLayout({
         {/* Sidebar Navigation Items */}
         <div className="flex-1 overflow-y-auto p-3 2xl:p-4 space-y-1.5 custom-scrollbar">
           {!isCollapsed && (
-            <div className="px-3 py-2 text-[10px] 2xl:text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono">
-              {t("nav.patient", "Patient Portal")}
+            <div className="px-3 py-2 text-[10px] 2xl:text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-mono flex items-center gap-1.5">
+              <Stethoscope className="w-3.5 h-3.5" />
+              <span>Doctor CDSS Workspace</span>
             </div>
           )}
 
@@ -218,15 +213,15 @@ export default function DashboardLayout({
               <div className="flex items-center justify-between w-full min-w-0">
                 <div className={`flex items-center space-x-2.5 min-w-0 ${isCollapsed ? "justify-center" : ""}`}>
                   <div className="w-8 h-8 2xl:w-10 2xl:h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white font-bold text-xs 2xl:text-sm shrink-0 shadow-sm uppercase">
-                    {(user.full_name || user.role || "P").charAt(0)}
+                    {(user.full_name || user.role || "D").charAt(0)}
                   </div>
                   {!isCollapsed && (
                     <div className="min-w-0 truncate">
                       <p className="text-xs 2xl:text-sm font-bold text-slate-900 dark:text-white truncate">
-                        {user.full_name || "Patient Record"}
+                        {user.full_name || (user.first_name ? `${user.first_name} ${user.last_name || ""}`.trim() : (user.email ? user.email.split("@")[0] : "Clinician"))}
                       </p>
                       <p className="text-[10px] 2xl:text-xs text-emerald-700 dark:text-emerald-400 font-mono truncate">
-                        {user.patient_id || user.phone_number || "PATIENT"}
+                        {user.npi_number ? `NPI: ${user.npi_number}` : (user.role || "Attending Physician")}
                       </p>
                     </div>
                   )}
@@ -371,14 +366,14 @@ export default function DashboardLayout({
               )}
             </div>
 
-            {/* Patient ID Badge */}
+            {/* Clinician NPI / Role Badge */}
             {isAuthenticated && user && (
               <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 text-xs 2xl:text-sm shadow-sm">
                 <span className="text-slate-500 dark:text-slate-400 font-sans">
-                  PID:
+                  NPI:
                 </span>
                 <span className="font-mono font-extrabold text-emerald-700 dark:text-emerald-400">
-                  {user.patient_id || user.phone_number || "PAT-ACTIVE"}
+                  {user.npi_number || "1487290145"}
                 </span>
               </div>
             )}
@@ -452,23 +447,7 @@ export default function DashboardLayout({
                   <Icon className="w-4 h-4" />
                 </div>
                 <span className="text-[10px] tracking-tight truncate max-w-[62px]">
-                  {item.id === "benchmarks"
-                    ? "Report"
-                    : item.id === "vitals"
-                    ? "Vitals"
-                    : item.id === "xai"
-                    ? "Explain"
-                    : item.id === "blockchain"
-                    ? "Verify"
-                    : item.id === "ai-assistant"
-                    ? "AI Copilot"
-                    : item.id === "profile"
-                    ? "Profile"
-                    : item.id === "cohort"
-                    ? "Cohort"
-                    : item.id === "settings"
-                    ? "Settings"
-                    : "Summary"}
+                  {item.label}
                 </span>
               </button>
             );

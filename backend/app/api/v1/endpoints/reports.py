@@ -15,11 +15,17 @@ from backend.app.schemas.report import (
     SaveAssessmentRequest,
     PatientAssessmentItem,
     PatientAssessmentHistoryResponse,
+    DoctorDecisionRequest,
+    DoctorDecisionResponse,
 )
 from backend.app.services.document_parser import parse_uploaded_document
 from backend.app.services.benchmarks import evaluate_clinical_benchmarks
+from backend.app.services.web3_client import web3_client
+from backend.app.models.user import MedicalRecordAudit
 from backend.app.core.i18n import normalize_language
 from backend.app.core.logging import logger
+import hashlib
+from datetime import datetime
 
 router = APIRouter()
 
@@ -125,6 +131,12 @@ def save_assessment_endpoint(
             existing.explainability_rate = payload.explainability_rate or existing.explainability_rate
             existing.deterministic_hash = payload.deterministic_hash or existing.deterministic_hash
             existing.ipfs_cid = payload.ipfs_cid or existing.ipfs_cid
+            if payload.doctor_decision:
+                existing.doctor_decision = payload.doctor_decision
+            if payload.doctor_notes:
+                existing.doctor_notes = payload.doctor_notes
+            if payload.doctor_signed_at:
+                existing.doctor_signed_at = payload.doctor_signed_at
             db.commit()
             db.refresh(existing)
             target = existing
@@ -146,6 +158,9 @@ def save_assessment_endpoint(
                 explainability_rate=payload.explainability_rate or 1.0,
                 deterministic_hash=payload.deterministic_hash,
                 ipfs_cid=payload.ipfs_cid,
+                doctor_decision=payload.doctor_decision,
+                doctor_notes=payload.doctor_notes,
+                doctor_signed_at=payload.doctor_signed_at,
             )
             db.add(target)
             db.commit()
@@ -158,6 +173,105 @@ def save_assessment_endpoint(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to save assessment to database: {str(e)}",
+        )
+
+
+@router.post(
+    "/doctor-decision",
+    response_model=DoctorDecisionResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Record Doctor's Final Clinical Decision & Sign On-Chain",
+)
+def save_doctor_clinical_decision(
+    payload: DoctorDecisionRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Module 11 & CDSS Final Decision:
+    Stores the Doctor's final clinical judgment and notes, re-hashes the complete
+    signed diagnostic package with SHA-256, and anchors the final decision to the blockchain audit log.
+    """
+    try:
+        # 1. Fetch or create patient assessment record
+        db_record = db.query(PatientAssessmentRecord).filter(
+            PatientAssessmentRecord.record_id == payload.record_id
+        ).first()
+
+        now_str = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+        if db_record:
+            db_record.doctor_decision = payload.doctor_decision
+            db_record.doctor_notes = payload.doctor_notes or ""
+            db_record.doctor_signed_at = now_str
+        else:
+            db_record = PatientAssessmentRecord(
+                record_id=payload.record_id,
+                patient_id=payload.patient_id,
+                report_name="Clinical Decision Signed Assessment",
+                doctor_decision=payload.doctor_decision,
+                doctor_notes=payload.doctor_notes or "",
+                doctor_signed_at=now_str,
+            )
+            db.add(db_record)
+
+        # 2. Compute signed cryptographic SHA-256 hash
+        signed_payload = {
+            "record_id": payload.record_id,
+            "patient_id": payload.patient_id,
+            "doctor_decision": payload.doctor_decision,
+            "doctor_notes": payload.doctor_notes or "",
+            "signed_at": now_str,
+            "initial_hash": db_record.deterministic_hash or "0x00",
+        }
+        signed_hash_bytes = hashlib.sha256(json.dumps(signed_payload, sort_keys=True).encode("utf-8")).hexdigest()
+        signed_hash = f"0x{signed_hash_bytes}"
+
+        tx_hash = None
+        if payload.reanchor_blockchain:
+            try:
+                anchor_res = web3_client.anchor_record(
+                    record_id=f"DECISION-{payload.record_id}",
+                    record_hash=signed_hash,
+                )
+                tx_hash = anchor_res.get("tx_hash")
+
+                # Also create an audit log entry
+                audit_entry = MedicalRecordAudit(
+                    record_id=payload.record_id,
+                    patient_id=payload.patient_id,
+                    action="DOCTOR_FINAL_DECISION_SIGNED",
+                    patient_data_json=json.dumps(signed_payload),
+                    patient_data_hash=signed_hash,
+                    diagnostic_result=payload.doctor_decision,
+                    tx_hash=tx_hash,
+                    clinician_address="0x71C84010a3b08803450942475E2582775a6fA6f1",
+                    ai_prediction_summary=f"Doctor Clinical Decision: {payload.doctor_decision} | Notes: {payload.doctor_notes[:100] if payload.doctor_notes else 'None'}",
+                    is_verified=True,
+                )
+                db.add(audit_entry)
+            except Exception as anchor_err:
+                logger.warning(f"Web3 anchoring note for doctor decision: {anchor_err}")
+
+        db.commit()
+        db.refresh(db_record)
+
+        return DoctorDecisionResponse(
+            status="SUCCESS",
+            record_id=payload.record_id,
+            patient_id=payload.patient_id,
+            doctor_decision=payload.doctor_decision,
+            doctor_notes=payload.doctor_notes or "",
+            doctor_signed_at=now_str,
+            tx_hash=tx_hash,
+            record_hash=signed_hash,
+            message="Doctor's final clinical decision securely recorded and anchored for audit verification.",
+        )
+    except Exception as e:
+        logger.error(f"Error saving doctor clinical decision: {e}")
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to record doctor decision: {str(e)}",
         )
 
 
@@ -324,5 +438,9 @@ def _format_db_record(r: PatientAssessmentRecord) -> PatientAssessmentItem:
         explainability_rate=r.explainability_rate or 1.0,
         deterministic_hash=r.deterministic_hash,
         ipfs_cid=r.ipfs_cid,
+        doctor_decision=r.doctor_decision,
+        doctor_notes=r.doctor_notes,
+        doctor_signed_at=r.doctor_signed_at,
         created_at=r.created_at.isoformat() if r.created_at else None,
     )
+

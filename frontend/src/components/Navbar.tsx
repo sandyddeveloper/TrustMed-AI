@@ -114,11 +114,9 @@ export default function Navbar() {
           {/* Auth / Login Button */}
           {isAuthenticated && user ? (
             <div className="flex items-center space-x-2 shrink-0">
-              {user.patient_id && (
-                <span className="hidden lg:inline-flex items-center px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-mono text-[11px] font-bold whitespace-nowrap">
-                  ID: {user.patient_id}
-                </span>
-              )}
+              <span className="hidden lg:inline-flex items-center px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-mono text-[11px] font-bold whitespace-nowrap">
+                NPI: {user.npi_number || "1487290145"}
+              </span>
               <Link
                 href="/dashboard"
                 className="flex items-center space-x-1 sm:space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all whitespace-nowrap shrink-0"

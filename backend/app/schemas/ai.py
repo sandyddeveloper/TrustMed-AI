@@ -31,6 +31,27 @@ class SecREMetrics(BaseModel):
     standard: str = "SecRE-XAI (HIPAA/FDA Tier-1 Validated)"
 
 
+class DiseaseRiskAssessment(BaseModel):
+    disease_name: str = Field(..., description="Name of the evaluated disease: 'Type 2 Diabetes', 'Cancer / Oncological Risk', 'Cardiovascular Disease (CVD)'")
+    risk_score: float = Field(..., description="Calibrated risk score between 0.0 and 1.0")
+    risk_percentage: str = Field(..., description="Formatted percentage string, e.g. '86.6%'")
+    risk_level: str = Field(..., description="'HIGH_RISK', 'MODERATE_RISK', or 'LOW_RISK'")
+    clinical_stage: str = Field(..., description="Clinical staging description")
+    primary_driver: str = Field(..., description="Primary biomarker driving the disease risk")
+    confirmatory_test: str = Field(..., description="Recommended confirmatory diagnostic test")
+
+
+class DerivedClinicalMetrics(BaseModel):
+    homa_ir: float = Field(..., description="Homeostatic Model Assessment of Insulin Resistance")
+    homa_ir_status: str = Field(..., description="Insulin resistance tier: Optimal, Early Resistance, Significant Resistance")
+    quicki: float = Field(..., description="Quantitative Insulin Sensitivity Check Index")
+    mean_arterial_pressure: float = Field(..., description="Estimated Mean Arterial Pressure in mmHg")
+    pulse_pressure: float = Field(..., description="Estimated Pulse Pressure in mmHg")
+    atherogenic_ratio: float = Field(..., description="Total Cholesterol-to-HDL proxy atherogenic index")
+    metabolic_inflammatory_score: float = Field(..., description="Composite 0-100 systemic metabolic inflammatory burden score")
+    bmr_estimate_kcal: int = Field(..., description="Estimated Basal Metabolic Rate in kcal/day")
+
+
 class MedicalInferenceResponse(BaseModel):
     patient_id: str
     prediction: float = Field(..., description="Predicted risk score or probability (0.0 to 1.0)")
@@ -44,6 +65,9 @@ class MedicalInferenceResponse(BaseModel):
     secre_compliance: SecREMetrics
     deterministic_hash: Optional[str] = Field(default=None, description="Deterministic SHA-256 record hash for blockchain anchoring")
     ipfs_cid: Optional[str] = Field(default=None, description="Pinata/Decentralized IPFS Content Identifier")
+    ai_explanation: Optional[str] = Field(default=None, description="Doctor-level clinical condition synthesis and AI reasoning summary")
+    multi_disease_risks: Optional[List[DiseaseRiskAssessment]] = Field(default=None, description="Triad multi-disease predictions: Diabetes, Cancer, and Cardiovascular")
+    derived_metrics: Optional[DerivedClinicalMetrics] = Field(default=None, description="Complete derived clinical statistics and physiological indices")
 
 
 class SummaryRequest(BaseModel):
