@@ -27,6 +27,11 @@ BIOMARKER_NAMES: Dict[str, Dict[str, str]] = {
         "ta": "இரத்த சர்க்கரை அளவு (Fasting Glucose)",
         "hi": "फास्टिंग ब्लड ग्लूकोज (Fasting Glucose)",
     },
+    "pp_glucose": {
+        "en": "Post-Prandial Glucose (PPBS)",
+        "ta": "உணவுக்குப் பின் இரத்த சர்க்கரை (PPBS)",
+        "hi": "भोजन के बाद रक्त शर्करा (PPBS)",
+    },
     "blood_pressure": {
         "en": "Systolic Blood Pressure",
         "ta": "சிஸ்டாலிக் இரத்த அழுத்தம் (Systolic BP)",
@@ -41,6 +46,31 @@ BIOMARKER_NAMES: Dict[str, Dict[str, str]] = {
         "en": "Total Cholesterol",
         "ta": "மொத்த கொலஸ்ட்ரால் (Total Cholesterol)",
         "hi": "कुल कोलेस्ट्रॉल (Total Cholesterol)",
+    },
+    "triglycerides": {
+        "en": "Serum Triglycerides",
+        "ta": "சீரம் ட்ரைகிளிசரைடுகள் (Triglycerides)",
+        "hi": "सीरम ट्राइग्लिसराइड्स (Triglycerides)",
+    },
+    "hdl": {
+        "en": "HDL Cholesterol (Good)",
+        "ta": "நல்ல கொலஸ்ட்ரால் (HDL)",
+        "hi": "अच्छा कोलेस्ट्रॉल (HDL)",
+    },
+    "ldl": {
+        "en": "LDL Cholesterol (Bad)",
+        "ta": "கெட்ட கொலஸ்ட்ரால் (LDL)",
+        "hi": "खराब कोलेस्ट्रॉल (LDL)",
+    },
+    "vldl": {
+        "en": "VLDL Cholesterol",
+        "ta": "மிகக் குறைந்த அடர்த்தி கொலஸ்ட்ரால் (VLDL)",
+        "hi": "वीएलडीएल कोलेस्ट्रॉल (VLDL)",
+    },
+    "cholesterol_hdl_ratio": {
+        "en": "Total Cholesterol / HDL Ratio",
+        "ta": "மொத்த கொலஸ்ட்ரால் / HDL விகிதம்",
+        "hi": "कुल कोलेस्ट्रॉल / एचडीएल अनुपात",
     },
     "heart_rate": {
         "en": "Resting Heart Rate",

@@ -673,6 +673,78 @@ Instructions:
             ],
         }
 
+    def extract_medical_report_with_vision(
+        self, file_bytes: bytes, filename: str, mime_type: str = "image/jpeg"
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Uses Gemini Multimodal Vision API to parse laboratory diagnostic reports
+        (Marvel Diagnostic Centre, Apollo, SRL, Lal PathLabs, Metropolis, etc.)
+        with zero-error precision across patient demographics, biochemistry, and lipid panels.
+        """
+        client = self._get_client()
+        if not client:
+            return None
+
+        prompt = (
+            "You are a senior clinical laboratory document parsing specialist. Analyze this medical diagnostic laboratory report with 100% precision.\n"
+            "Extract the exact patient demographics, diagnostic center name, report date, and all biochemistry and lipid profile test values, units, and reference ranges.\n\n"
+            "Return ONLY a pure JSON object (no markdown, no ```json tags) with the exact structure:\n"
+            "{\n"
+            '  "diagnostic_center": string or null (e.g. "Marvel Diagnostic Centre"),\n'
+            '  "patient_name": string or null (e.g. "Mr. J. Mohan"),\n'
+            '  "patient_id": string or null (e.g. "820326" or S.No.),\n'
+            '  "age": number or null (e.g. 50),\n'
+            '  "gender": "Male" | "Female" | null,\n'
+            '  "report_date": string or null (e.g. "15.03.2026"),\n'
+            '  "glucose_level": number or null (Fasting Blood Glucose in mg/dL, e.g. 156.0),\n'
+            '  "pp_glucose": number or null (Post-Prandial Glucose in mg/dL, e.g. 249.8),\n'
+            '  "cholesterol": number or null (Total Cholesterol in mg/dL, e.g. 196.3),\n'
+            '  "triglycerides": number or null (Serum Triglycerides in mg/dL, e.g. 267.0),\n'
+            '  "hdl": number or null (HDL Cholesterol in mg/dL, e.g. 38.8),\n'
+            '  "ldl": number or null (LDL Cholesterol in mg/dL, e.g. 104.4),\n'
+            '  "vldl": number or null (VLDL Cholesterol in mg/dL, e.g. 53.1),\n'
+            '  "cholesterol_hdl_ratio": number or null (Total Cholesterol / HDL Ratio, e.g. 5.0),\n'
+            '  "blood_pressure": number or null,\n'
+            '  "bmi": number or null,\n'
+            '  "insulin": number or null,\n'
+            '  "heart_rate": number or null,\n'
+            '  "clinical_summary": string (concise 2-sentence clinical interpretation of critical values)\n'
+            "}"
+        )
+
+        try:
+            effective_mime = mime_type
+            fname_lower = filename.lower()
+            if fname_lower.endswith(".pdf"):
+                effective_mime = "application/pdf"
+            elif fname_lower.endswith(".png"):
+                effective_mime = "image/png"
+            elif fname_lower.endswith((".jpg", ".jpeg")):
+                effective_mime = "image/jpeg"
+            elif fname_lower.endswith(".webp"):
+                effective_mime = "image/webp"
+
+            part = types.Part.from_bytes(data=file_bytes, mime_type=effective_mime)
+            response = client.models.generate_content(
+                model=self.model_name,
+                contents=[part, prompt],
+            )
+            if response and hasattr(response, "text") and response.text:
+                raw = response.text.strip()
+                if raw.startswith("```"):
+                    raw = raw.split("```")[1]
+                    if raw.startswith("json"):
+                        raw = raw[4:].strip()
+                data = json.loads(raw.strip())
+                logger.info(
+                    f"Gemini Vision successfully extracted lab report: {data.get('patient_name')} ({data.get('diagnostic_center')})"
+                )
+                return data
+        except Exception as e:
+            logger.warning(f"Gemini Vision extraction notice: {e}")
+
+        return None
+
 
 gemini_service = GeminiService()
 

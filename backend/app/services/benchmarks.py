@@ -255,6 +255,176 @@ def evaluate_clinical_benchmarks(vitals: Dict[str, float], language: str = "en")
                 severity_level=sev,
             )
         )
+    # 7. Post-Prandial Blood Glucose (ADA Standard)
+    if "pp_glucose" in vitals and vitals["pp_glucose"] > 0:
+        val = round(float(vitals["pp_glucose"]), 1)
+        median_opt = 110.0
+        if val < 70:
+            status, color, sev = "LOW", "blue", 2
+        elif val <= 139:
+            status, color, sev = "OPTIMAL", "emerald", 1
+        elif val <= 199:
+            status, color, sev = "BORDERLINE", "amber", 2
+        else:
+            status, color, sev = "CRITICAL", "rose", 4
+
+        interp = f"Post-prandial blood glucose is {val} mg/dL ({status})." if lang == "en" else f"உணவுக்குப் பின் இரத்த சர்க்கரை {val} mg/dL ({status})."
+        if status == "CRITICAL":
+            concerns.append(f"Post-prandial blood sugar is critically elevated at {val} mg/dL (ADA Diabetes Threshold >= 200 mg/dL).")
+
+        benchmarks_list.append(
+            BiomarkerBenchmark(
+                name=get_biomarker_name("pp_glucose", lang=lang),
+                key="pp_glucose",
+                patient_value=val,
+                unit="mg/dL",
+                normal_range="70 - 139 mg/dL",
+                min_optimal=70.0,
+                max_optimal=139.0,
+                status=status,
+                status_color=color,
+                delta_from_median=round(val - median_opt, 1),
+                interpretation=interp,
+                guideline_source=get_guideline_source("ADA", lang=lang),
+                severity_level=sev,
+            )
+        )
+
+    # 8. Serum Triglycerides (NCEP ATP III Standard)
+    if "triglycerides" in vitals and vitals["triglycerides"] > 0:
+        val = round(float(vitals["triglycerides"]), 1)
+        median_opt = 100.0
+        if val < 150:
+            status, color, sev = "OPTIMAL", "emerald", 1
+        elif val <= 199:
+            status, color, sev = "BORDERLINE", "amber", 2
+        elif val <= 499:
+            status, color, sev = "ELEVATED", "amber", 3
+        else:
+            status, color, sev = "CRITICAL", "rose", 4
+
+        interp = f"Serum triglycerides are {val} mg/dL ({status})." if lang == "en" else f"சீரம் ட்ரைகிளிசரைடுகள் {val} mg/dL ({status})."
+        if status in ("ELEVATED", "CRITICAL"):
+            concerns.append(f"Hypertriglyceridemia detected at {val} mg/dL (Optimal < 150 mg/dL), elevating cardiovascular and pancreatic risk.")
+
+        benchmarks_list.append(
+            BiomarkerBenchmark(
+                name=get_biomarker_name("triglycerides", lang=lang),
+                key="triglycerides",
+                patient_value=val,
+                unit="mg/dL",
+                normal_range="< 150 mg/dL",
+                min_optimal=50.0,
+                max_optimal=149.0,
+                status=status,
+                status_color=color,
+                delta_from_median=round(val - median_opt, 1),
+                interpretation=interp,
+                guideline_source=get_guideline_source("NCEP", lang=lang),
+                severity_level=sev,
+            )
+        )
+
+    # 9. HDL Cholesterol (Protective Good Cholesterol - AHA)
+    if "hdl" in vitals and vitals["hdl"] > 0:
+        val = round(float(vitals["hdl"]), 1)
+        median_opt = 55.0
+        if val >= 60:
+            status, color, sev = "OPTIMAL", "emerald", 1
+        elif val >= 40:
+            status, color, sev = "BORDERLINE", "amber", 2
+        else:
+            status, color, sev = "LOW", "rose", 3
+
+        interp = f"Protective HDL cholesterol is {val} mg/dL ({status})." if lang == "en" else f"பாதுகாப்பு நல்ல கொலஸ்ட்ரால் {val} mg/dL ({status})."
+        if status == "LOW":
+            concerns.append(f"Protective HDL cholesterol is sub-optimal at {val} mg/dL (AHA Target >= 40 mg/dL for men, >= 50 mg/dL for women).")
+
+        benchmarks_list.append(
+            BiomarkerBenchmark(
+                name=get_biomarker_name("hdl", lang=lang),
+                key="hdl",
+                patient_value=val,
+                unit="mg/dL",
+                normal_range="40 - 70 mg/dL",
+                min_optimal=40.0,
+                max_optimal=70.0,
+                status=status,
+                status_color=color,
+                delta_from_median=round(val - median_opt, 1),
+                interpretation=interp,
+                guideline_source=get_guideline_source("AHA", lang=lang),
+                severity_level=sev,
+            )
+        )
+
+    # 10. LDL Cholesterol (Atherogenic Bad Cholesterol - NCEP ATP III)
+    if "ldl" in vitals and vitals["ldl"] > 0:
+        val = round(float(vitals["ldl"]), 1)
+        median_opt = 80.0
+        if val < 100:
+            status, color, sev = "OPTIMAL", "emerald", 1
+        elif val <= 129:
+            status, color, sev = "BORDERLINE", "amber", 2
+        elif val <= 159:
+            status, color, sev = "ELEVATED", "amber", 3
+        else:
+            status, color, sev = "CRITICAL", "rose", 4
+
+        interp = f"Atherogenic LDL cholesterol is {val} mg/dL ({status})." if lang == "en" else f"கெட்ட கொலஸ்ட்ரால் (LDL) {val} mg/dL ({status})."
+        if status in ("ELEVATED", "CRITICAL"):
+            concerns.append(f"Elevated LDL cholesterol at {val} mg/dL increases plaque formation risk (Target < 100 mg/dL).")
+
+        benchmarks_list.append(
+            BiomarkerBenchmark(
+                name=get_biomarker_name("ldl", lang=lang),
+                key="ldl",
+                patient_value=val,
+                unit="mg/dL",
+                normal_range="< 100 mg/dL",
+                min_optimal=50.0,
+                max_optimal=99.0,
+                status=status,
+                status_color=color,
+                delta_from_median=round(val - median_opt, 1),
+                interpretation=interp,
+                guideline_source=get_guideline_source("NCEP", lang=lang),
+                severity_level=sev,
+            )
+        )
+
+    # 11. Total Cholesterol / HDL Ratio (Atherogenic Index)
+    if "cholesterol_hdl_ratio" in vitals and vitals["cholesterol_hdl_ratio"] > 0:
+        val = round(float(vitals["cholesterol_hdl_ratio"]), 1)
+        median_opt = 3.5
+        if val < 4.0:
+            status, color, sev = "OPTIMAL", "emerald", 1
+        elif val <= 4.5:
+            status, color, sev = "BORDERLINE", "amber", 2
+        else:
+            status, color, sev = "ELEVATED", "rose", 3
+
+        interp = f"Cholesterol / HDL cardiovascular risk ratio is {val} ({status})." if lang == "en" else f"கொலஸ்ட்ரால் / HDL விகிதம் {val} ({status})."
+        if status == "ELEVATED":
+            concerns.append(f"Atherogenic risk ratio is elevated at {val} (Clinical Target < 4.5).")
+
+        benchmarks_list.append(
+            BiomarkerBenchmark(
+                name=get_biomarker_name("cholesterol_hdl_ratio", lang=lang),
+                key="cholesterol_hdl_ratio",
+                patient_value=val,
+                unit="Ratio",
+                normal_range="< 4.5",
+                min_optimal=2.0,
+                max_optimal=4.0,
+                status=status,
+                status_color=color,
+                delta_from_median=round(val - median_opt, 1),
+                interpretation=interp,
+                guideline_source=get_guideline_source("AHA", lang=lang),
+                severity_level=sev,
+            )
+        )
 
     # Aggregate counts
     optimal_count = sum(1 for b in benchmarks_list if b.status == "OPTIMAL")
